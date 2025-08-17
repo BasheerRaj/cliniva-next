@@ -1,0 +1,71 @@
+{
+  "common": {
+    "signIn": "Sign In",
+    "getStarted": "Get Started",
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "continue": "Continue",
+    "back": "Back",
+    "next": "Next",
+    "submit": "Submit",
+    "close": "Close",
+    "edit": "Edit",
+    "delete": "Delete",
+    "confirm": "Confirm",
+    "language": "Language"
+  },
+  "navigation": {
+    "home": "Home",
+    "dashboard": "Dashboard",
+    "onboarding": "Onboarding",
+    "auth": "Authentication",
+    "login": "Login",
+    "register": "Register",
+    "logout": "Logout"
+  },
+  "home": {
+    "title": "Cliniva",
+    "heroTitle": "Healthcare Management",
+    "heroSubtitle": "Made Simple",
+    "heroDescription": "Comprehensive healthcare management platform for clinics, complexes, and medical organizations. Streamline your operations, manage patients efficiently, and grow your practice with confidence.",
+    "startOrganization": "Start Your Organization",
+    "registerPatient": "Register as Patient",
+    "singleClinics": "Single Clinics",
+    "singleClinicsDesc": "Perfect for individual clinics looking to digitize their operations and enhance patient care quality.",
+    "medicalComplexes": "Medical Complexes",
+    "medicalComplexesDesc": "Comprehensive solution for medical complexes with multiple departments and specialized services.",
+    "healthcareCompanies": "Healthcare Companies",
+    "healthcareCompaniesDesc": "Enterprise-level solution for large healthcare organizations managing multiple locations.",
+    "readyToTransform": "Ready to Transform Your Practice?",
+    "joinThousands": "Join thousands of healthcare providers who trust Cliniva to manage their operations efficiently.",
+    "getStartedToday": "Get Started Today"
+  },
+  "auth": {
+    "loginTitle": "Sign in to your account",
+    "registerTitle": "Create your account",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "phone": "Phone Number",
+    "rememberMe": "Remember me",
+    "forgotPassword": "Forgot your password?",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already have an account?",
+    "signUp": "Sign up",
+    "signIn": "Sign in",
+    "or": "or"
+  },
+  "errors": {
+    "unauthorized": "Unauthorized",
+    "notFound": "Page not found",
+    "serverError": "Server error",
+    "networkError": "Network error",
+    "validationError": "Validation error",
+    "invalidCredentials": "Invalid credentials",
+    "emailRequired": "Email is required",
+    "passwordRequired": "Password is required"
+  }
+} 

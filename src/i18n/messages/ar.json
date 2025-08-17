@@ -1,0 +1,71 @@
+{
+  "common": {
+    "signIn": "تسجيل الدخول",
+    "getStarted": "ابدأ الآن",
+    "loading": "جاري التحميل...",
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "continue": "متابعة",
+    "back": "رجوع",
+    "next": "التالي",
+    "submit": "إرسال",
+    "close": "إغلاق",
+    "edit": "تعديل",
+    "delete": "حذف",
+    "confirm": "تأكيد",
+    "language": "اللغة"
+  },
+  "navigation": {
+    "home": "الرئيسية",
+    "dashboard": "لوحة التحكم",
+    "onboarding": "الإعداد الأولي",
+    "auth": "المصادقة",
+    "login": "تسجيل الدخول",
+    "register": "إنشاء حساب",
+    "logout": "تسجيل الخروج"
+  },
+  "home": {
+    "title": "كلينيفا",
+    "heroTitle": "إدارة الرعاية الصحية",
+    "heroSubtitle": "أصبحت بسيطة",
+    "heroDescription": "منصة شاملة لإدارة الرعاية الصحية للعيادات والمجمعات والمنظمات الطبية. قم بتبسيط عملياتك وإدارة المرضى بكفاءة وتنمية ممارستك بثقة.",
+    "startOrganization": "ابدأ مؤسستك",
+    "registerPatient": "سجل كمريض",
+    "singleClinics": "العيادات الفردية",
+    "singleClinicsDesc": "مثالي للعيادات الفردية التي تتطلع إلى رقمنة عملياتها وتحسين جودة رعاية المرضى.",
+    "medicalComplexes": "المجمعات الطبية",
+    "medicalComplexesDesc": "حل شامل للمجمعات الطبية مع أقسام متعددة وخدمات متخصصة.",
+    "healthcareCompanies": "شركات الرعاية الصحية",
+    "healthcareCompaniesDesc": "حل على مستوى المؤسسة لمنظمات الرعاية الصحية الكبيرة التي تدير مواقع متعددة.",
+    "readyToTransform": "مستعد لتحويل ممارستك؟",
+    "joinThousands": "انضم إلى آلاف مقدمي الرعاية الصحية الذين يثقون في كلينيفا لإدارة عملياتهم بكفاءة.",
+    "getStartedToday": "ابدأ اليوم"
+  },
+  "auth": {
+    "loginTitle": "تسجيل الدخول إلى حسابك",
+    "registerTitle": "إنشاء حسابك",
+    "email": "البريد الإلكتروني",
+    "password": "كلمة المرور",
+    "confirmPassword": "تأكيد كلمة المرور",
+    "firstName": "الاسم الأول",
+    "lastName": "الاسم الأخير",
+    "phone": "رقم الهاتف",
+    "rememberMe": "تذكرني",
+    "forgotPassword": "نسيت كلمة المرور؟",
+    "noAccount": "ليس لديك حساب؟",
+    "hasAccount": "هل لديك حساب بالفعل؟",
+    "signUp": "إنشاء حساب",
+    "signIn": "تسجيل الدخول",
+    "or": "أو"
+  },
+  "errors": {
+    "unauthorized": "غير مخول",
+    "notFound": "الصفحة غير موجودة",
+    "serverError": "خطأ في الخادم",
+    "networkError": "خطأ في الشبكة",
+    "validationError": "خطأ في التحقق",
+    "invalidCredentials": "بيانات اعتماد غير صحيحة",
+    "emailRequired": "البريد الإلكتروني مطلوب",
+    "passwordRequired": "كلمة المرور مطلوبة"
+  }
+} 

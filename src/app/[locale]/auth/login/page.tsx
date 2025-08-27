@@ -20,7 +20,7 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   
-  const { login } = useAuth();
+  const { login, redirectBasedOnRole } = useAuth();
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -32,8 +32,10 @@ export default function LoginPage() {
       const result = await login(email, password);
       
       if (result?.ok) {
-        // Get updated session and redirect based on role
-        window.location.href = '/dashboard';
+        // Wait a moment for session to update, then redirect based on role and plan status
+        setTimeout(() => {
+          window.location.reload(); // Force reload to get updated session, then OnboardingRouter will handle redirect
+        }, 1000);
       } else {
         setError(t('errors.invalidCredentials'));
       }
@@ -217,7 +219,7 @@ export default function LoginPage() {
                 className="w-full h-11 border-[#69a3e9] text-[#69a3e9] hover:bg-[#69a3e9]/10 hover:text-[#69a3e9]"
                 size="lg"
               >
-                <Link href="/onboarding">{t('home.startOrganization')}</Link>
+                <Link href="/onboarding/plan-selection">{t('home.startOrganization')}</Link>
               </Button>
               
               <Button

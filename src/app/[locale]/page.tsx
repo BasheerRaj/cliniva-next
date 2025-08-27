@@ -77,7 +77,7 @@ export default function Home() {
               size="lg"
               className="bg-[#69a3e9] hover:bg-[#4a8ce0] text-white font-semibold px-10 py-6 rounded-xl text-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
             >
-              <Link href="/onboarding">{t('home.startOrganization')}</Link>
+              <Link href="/onboarding/plan-selection">{t('home.startOrganization')}</Link>
             </Button>
             <Button
               asChild
@@ -148,7 +148,7 @@ export default function Home() {
             size="lg"
             className="bg-[#69a3e9] hover:bg-[#4a8ce0] text-white font-semibold px-10 py-6 rounded-xl text-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
           >
-            <Link href="/onboarding">{t('home.getStartedToday')}</Link>
+            <Link href="/onboarding/plan-selection">{t('home.getStartedToday')}</Link>
           </Button>
         </div>
       </div>

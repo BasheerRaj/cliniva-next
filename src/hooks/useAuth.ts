@@ -35,12 +35,25 @@ export const useAuth = () => {
   const redirectBasedOnRole = useCallback((user: any) => {
     if (!user) return;
 
-    const { role, setupComplete } = user;
+    const { role, setupComplete, subscriptionId, planType, organizationId } = user;
 
     switch (role) {
       case 'owner':
         if (!setupComplete) {
-          router.push('/setup');
+          // Check if owner has selected a plan
+          const hasSubscription = !!(subscriptionId || organizationId);
+          const hasSelectedPlan = !!(subscriptionId || planType);
+          
+          if (hasSubscription || hasSelectedPlan) {
+            // Owner has a plan, redirect to setup with plan type
+            const finalPlanType = planType || 'clinic';
+            console.log('🚀 useAuth: Redirecting owner to setup with plan:', finalPlanType);
+            router.push(`/setup?plan=${finalPlanType}`);
+          } else {
+            // Owner has no plan, redirect to plan selection
+            console.log('📋 useAuth: Owner has no plan, redirecting to plan selection');
+            router.push('/onboarding/plan-selection');
+          }
         } else {
           router.push('/dashboard/owner');
         }

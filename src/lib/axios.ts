@@ -44,21 +44,36 @@ apiClient.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
     
-    // If the error is 401 and we haven't already tried to refresh
+    // Only handle authentication errors, not all 401s
+    // Check if it's actually an authentication/authorization issue
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
       
-      try {
-        // Sign out the user if token is invalid
-        await signOut({ callbackUrl: '/auth/login' });
-        return Promise.reject(error);
-      } catch (refreshError) {
-        // If refresh fails, redirect to login
-        await signOut({ callbackUrl: '/auth/login' });
-        return Promise.reject(refreshError);
+      // Check if the error indicates an expired/invalid token
+      const errorMessage = error.response?.data?.message?.toLowerCase() || '';
+      const isAuthError = errorMessage.includes('token') || 
+                         errorMessage.includes('unauthorized') || 
+                         errorMessage.includes('expired') ||
+                         errorMessage.includes('invalid') ||
+                         error.response?.data?.code === 'TOKEN_EXPIRED' ||
+                         error.response?.data?.code === 'UNAUTHORIZED';
+      
+      // Only sign out if it's actually an authentication issue
+      if (isAuthError) {
+        try {
+          console.log('🔐 Authentication token expired, signing out...');
+          await signOut({ callbackUrl: '/auth/login' });
+          return Promise.reject(error);
+        } catch (refreshError) {
+          console.log('🔐 Failed to refresh token, signing out...');
+          await signOut({ callbackUrl: '/auth/login' });
+          return Promise.reject(refreshError);
+        }
       }
     }
     
+    // For all other errors (including non-auth 401s), just pass them through
+    // This allows the application to handle them appropriately
     return Promise.reject(error);
   }
 );
@@ -73,7 +88,10 @@ export const apiHelpers = {
       email,
       password,
     });
-    return response.data;
+    return {
+      success: true,
+      ...response.data
+    };
   },
 
   register: async (userData: {
@@ -83,9 +101,15 @@ export const apiHelpers = {
     lastName: string;
     role?: string;
     phone?: string;
+    nationality?: string;
+    dateOfBirth?: Date;
+    gender?: 'male' | 'female' | 'other';
   }) => {
     const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1'}/auth/register`, userData);
-    return response.data;
+    return {
+      success: true,
+      ...response.data
+    };
   },
 
   // User management
@@ -103,6 +127,25 @@ export const apiHelpers = {
   createOrganization: async (organizationData: any) => {
     const response = await apiClient.post('/organization', organizationData);
     return response.data;
+  },
+
+  // Get current user's organization
+  getCurrentOrganization: async () => {
+    const response = await apiClient.get('/auth/profile');
+    const user = response.data.user;
+    
+    if (user.organizationId) {
+      const orgResponse = await apiClient.get(`/organization/${user.organizationId}`);
+      return {
+        success: true,
+        data: orgResponse.data
+      };
+    }
+    
+    return {
+      success: false,
+      message: 'No organization found for user'
+    };
   },
 
   // Generic CRUD operations

@@ -9,7 +9,12 @@ interface SessionProviderProps {
 
 export const SessionProvider = ({ children }: SessionProviderProps) => {
   return (
-    <NextAuthSessionProvider>
+    <NextAuthSessionProvider 
+      refetchInterval={0} // Disable automatic session refetching completely
+      refetchOnWindowFocus={false} // Prevent refetch on window focus
+      refetchWhenOffline={false} // Don't refetch when offline
+      basePath="/api/auth" // Explicitly set the auth API path
+    >
       {children}
     </NextAuthSessionProvider>
   );

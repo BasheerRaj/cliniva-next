@@ -13,6 +13,11 @@ const intlMiddleware = createIntlMiddleware({
 
 export default withAuth(
   async function middleware(request: NextRequestWithAuth) {
+    // Skip middleware processing for API routes entirely
+    if (request.nextUrl.pathname.startsWith('/api')) {
+      return NextResponse.next();
+    }
+
     // First, handle internationalization
     const response = intlMiddleware(request);
     
@@ -101,6 +106,11 @@ export default withAuth(
       authorized: ({ token, req }) => {
         const { pathname } = req.nextUrl;
         
+        // Always allow API routes (including NextAuth)
+        if (pathname.startsWith('/api')) {
+          return true;
+        }
+        
         // Allow access to public routes (with or without locale prefix)
         const pathWithoutLocale = pathname.replace(/^\/(en|ar)/, '') || '/';
         if (
@@ -108,7 +118,6 @@ export default withAuth(
           pathWithoutLocale.startsWith('/onboarding') ||
           pathWithoutLocale === '/unauthorized' ||
           pathname.startsWith('/_next') ||
-          pathname.startsWith('/api/auth') ||
           pathname === '/favicon.ico' ||
           pathname.startsWith('/public') ||
           pathWithoutLocale === '/' ||
@@ -135,6 +144,6 @@ export const config = {
      * - favicon.ico (favicon file)
      * - public (public files)
      */
-    '/((?!api|_next/static|_next/image|favicon.ico|public).*)',
+    '/((?!api|_next/static|_next/image|favicon.ico|public|.*\\..*).*)' 
   ],
 }; 

@@ -258,7 +258,7 @@ export default function RegisterPage() {
               <p className="text-sm text-muted-foreground">
                 Are you a healthcare provider?{' '}
                 <Link
-                  href="/onboarding"
+                  href="/onboarding/plan-selection"
                   className="font-medium text-[#69a3e9] hover:text-[#4a8ce0] transition-colors"
                 >
                   {t('home.startOrganization')}

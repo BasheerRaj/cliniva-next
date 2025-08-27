@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { apiHelpers } from '@/lib/axios';
 import { signIn } from 'next-auth/react';
+import { useRefreshSession } from './useRefreshSession';
 
 export interface RegisterData {
   email: string;
@@ -33,6 +34,7 @@ export const useRegister = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const { forceRefreshWithLogin } = useRefreshSession();
 
   const registerPatient = async (data: RegisterData) => {
     setLoading(true);
@@ -107,9 +109,19 @@ export const useRegister = () => {
       });
 
       console.log('✅ Subscription created successfully:', subscriptionResult);
+      console.log('📊 Subscription details:', {
+        subscriptionId: subscriptionResult.data?.id,
+        userId: subscriptionResult.data?.userId,
+        planType: data.organizationType,
+        planId: data.planId
+      });
 
-      // Step 3: Auto-login after successful registration
-      console.log('🔥 Step 3: Auto-login...');
+      // Step 3: Wait for database consistency, then auto-login with session refresh
+      console.log('🔥 Step 3: Auto-login with session refresh...');
+      // Small delay to ensure database writes are committed
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // First, do the basic sign-in
       const loginResult = await signIn('credentials', {
         email: data.email,
         password: data.password,
@@ -120,7 +132,45 @@ export const useRegister = () => {
         throw new Error('Registration successful, but login failed. Please login manually.');
       }
 
-      console.log('✅ Auto-login successful');
+      console.log('✅ Basic login successful, now refreshing session with fresh data...');
+      
+      // Step 3.5: Force session refresh with fresh user data from backend
+      const refreshedSession = await forceRefreshWithLogin(data.email, data.password);
+      
+      if (refreshedSession?.user) {
+        console.log('✅ Session refreshed with subscription data:', {
+        subscriptionId: refreshedSession.user.subscriptionId,
+        planType: refreshedSession.user.planType,
+        userId: refreshedSession.user.id
+      });
+      
+      // Check if user needs setup based on their plan and existing entities
+      console.log('🔍 Checking if user needs setup...');
+      try {
+        const entitiesStatus = await apiHelpers.get(`/users/${refreshedSession.user.id}/entities-status`);
+        console.log('📊 User entities status:', entitiesStatus);
+        
+        if (entitiesStatus.needsSetup) {
+          console.log('🎯 User needs setup, redirecting to setup page');
+          window.location.href = `/onboarding/setup?plan=${entitiesStatus.planType}&step=${entitiesStatus.nextStep}`;
+        } else {
+          console.log('✅ User setup complete, redirecting to dashboard');
+          window.location.href = '/dashboard';
+        }
+      } catch (error) {
+        console.error('❌ Error checking user entities, using fallback redirect:', error);
+        // Fallback: redirect to setup with the plan type from registration data
+        const planType = refreshedSession.user.planType || data.organizationType;
+        console.log('🎯 Fallback redirect to setup with plan type:', planType);
+        window.location.href = `/onboarding/setup?plan=${planType}`;
+      }
+      } else {
+        console.log('⚠️ Session refresh failed, but login was successful. Using fallback redirect...');
+        // Fallback: redirect to setup with the plan type from registration data
+        const planType = data.organizationType;
+        console.log('🎯 Fallback redirect to setup with plan type:', planType);
+        window.location.href = `/onboarding/setup?plan=${planType}`;
+      }
 
       // Step 4: Store onboarding data in sessionStorage for setup page
       const onboardingData = {
@@ -132,10 +182,12 @@ export const useRegister = () => {
       };
       
       sessionStorage.setItem('onboardingData', JSON.stringify(onboardingData));
+      console.log('💾 Onboarding data stored in sessionStorage:', onboardingData);
       console.log('✅ Onboarding data stored for setup');
 
-      // Step 5: Redirect to setup page
-      router.push('/setup');
+      // Step 5: Small delay to ensure session is established, then redirect
+      await new Promise(resolve => setTimeout(resolve, 1000)); // 1 second delay
+      router.push(`/onboarding/setup?plan=${data.organizationType}`);
       
       return { user: userResult, subscription: subscriptionResult };
     } catch (err: any) {

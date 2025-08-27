@@ -1,0 +1,248 @@
+'use client';
+
+import React, { useEffect } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { useAuth } from '@/hooks/useAuth';
+import { OnboardingFlow, OnboardingData } from '@/components/onboarding';
+import { PlanType } from '@/types/onboarding/common';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Loader2, AlertCircle, ChevronLeft } from 'lucide-react';
+
+export default function SetupPage() {
+  const { user, isLoading, isAuthenticated } = useAuth();
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  // Get plan type from URL parameters, fallback to user's session planType
+  const urlPlanType = searchParams.get('plan') as PlanType | null;
+  const sessionPlanType = user?.planType as PlanType | null;
+
+  // Enhanced planType determination with multiple fallbacks
+  let planType = urlPlanType || sessionPlanType;
+  
+  // Additional fallbacks when planType is not available
+  if (!planType && user) {
+    // Try to determine from onboarding progress
+    if (user.onboardingProgress?.includes('company')) planType = 'company';
+    else if (user.onboardingProgress?.includes('complex')) planType = 'complex';
+    else if (user.subscriptionId || user.organizationId || user.clinicId) planType = 'clinic';
+    
+    // Check sessionStorage for onboarding data as final fallback
+    if (!planType && typeof window !== 'undefined') {
+      try {
+        const onboardingData = sessionStorage.getItem('onboardingData');
+        if (onboardingData) {
+          const parsed = JSON.parse(onboardingData);
+          if (parsed.organizationType) {
+            planType = parsed.organizationType as PlanType;
+          }
+        }
+      } catch (error) {
+        console.log('Could not parse sessionStorage data:', error);
+      }
+    }
+  }
+
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      const returnUrl = `/setup${planType ? `?plan=${planType}` : ''}`;
+      router.push(`/auth/login?returnUrl=${encodeURIComponent(returnUrl)}`);
+    }
+  }, [isLoading, isAuthenticated, router, planType]);
+
+  // Redirect if user has already completed setup
+  useEffect(() => {
+    if (user?.setupComplete) {
+      router.push('/dashboard');
+    }
+  }, [user, router]);
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Card>
+          <CardContent className="p-8 text-center">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-500" />
+            <h3 className="text-lg font-medium mb-2">Loading Setup...</h3>
+            <p className="text-sm text-muted-foreground">
+              Please wait while we prepare your onboarding experience.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Show error if not authenticated
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Card>
+          <CardContent className="p-8 text-center">
+            <AlertCircle className="h-8 w-8 mx-auto mb-4 text-red-500" />
+            <h3 className="text-lg font-medium mb-2">Authentication Required</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              You need to be logged in to access the setup wizard.
+            </p>
+            <Button onClick={() => router.push('/auth/login')}>
+              Go to Login
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Show error if user role is not owner
+  if (user && user.role !== 'owner') {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Card>
+          <CardContent className="p-8 text-center">
+            <AlertCircle className="h-8 w-8 mx-auto mb-4 text-amber-500" />
+            <h3 className="text-lg font-medium mb-2">Access Restricted</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              Only organization owners can access the setup wizard. 
+              Your current role: <strong>{user.role}</strong>
+            </p>
+            <div className="flex gap-2 justify-center">
+              <Button variant="outline" onClick={() => router.back()}>
+                <ChevronLeft className="h-4 w-4 mr-2" />
+                Go Back
+              </Button>
+              <Button onClick={() => router.push('/dashboard')}>
+                Go to Dashboard
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Show error if no plan type specified
+  if (!planType) {
+    console.log('❌ Setup: No plan type found. Debug info:', {
+      urlPlanType,
+      sessionPlanType: user?.planType,
+      userHasSubscription: !!user?.subscriptionId,
+      userHasOrg: !!user?.organizationId,
+      userOnboardingProgress: user?.onboardingProgress,
+      fullUser: user
+    });
+
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Card>
+          <CardContent className="p-8 text-center">
+            <AlertCircle className="h-8 w-8 mx-auto mb-4 text-amber-500" />
+            <h3 className="text-lg font-medium mb-2">Plan Selection Required</h3>
+            <div className="text-sm text-muted-foreground mb-4">
+              {user?.subscriptionId ? (
+                <>
+                  <p>We found your subscription but couldn't determine your plan type.</p>
+                  <p className="text-xs text-blue-600 mt-2">
+                    Subscription ID: {user.subscriptionId}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    This usually resolves itself on the next login. Please try refreshing the page.
+                  </p>
+                </>
+              ) : (
+                <p>Please select a subscription plan before proceeding with the setup.</p>
+              )}
+            </div>
+            <div className="flex gap-2 justify-center">
+              <Button variant="outline" onClick={() => router.back()}>
+                <ChevronLeft className="h-4 w-4 mr-2" />
+                Go Back
+              </Button>
+              {user?.subscriptionId ? (
+                <Button onClick={() => window.location.reload()}>
+                  Refresh Page
+                </Button>
+              ) : (
+                <Button onClick={() => router.push('/onboarding/plan-selection')}>
+                  Choose Your Plan
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Validate plan type
+  const validPlanTypes: PlanType[] = ['company', 'complex', 'clinic'];
+  if (!validPlanTypes.includes(planType)) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Card>
+          <CardContent className="p-8 text-center">
+            <AlertCircle className="h-8 w-8 mx-auto mb-4 text-red-500" />
+            <h3 className="text-lg font-medium mb-2">Invalid Plan Type</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              The specified plan type "{planType}" is not valid. 
+              Please select a valid plan.
+            </p>
+            <Button onClick={() => router.push('/onboarding/plan-selection')}>
+              Choose Your Plan
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const handleOnboardingComplete = async (data: OnboardingData) => {
+    console.log('Onboarding completed with data:', data);
+    
+    try {
+      // Here you would typically send the data to your backend APIs
+      // Based on the plan type, create the appropriate entities
+      
+      if (data.company && planType === 'company') {
+        console.log('Creating organization:', data.company);
+        // await createOrganization(data.company)
+      }
+      
+      if (data.complex && (planType === 'complex' || planType === 'company')) {
+        console.log('Creating complex:', data.complex);
+        // await createComplex(data.complex)
+      }
+      
+      if (data.clinic && (planType === 'clinic' || planType === 'complex' || planType === 'company')) {
+        console.log('Creating clinic:', data.clinic);
+        // await createClinic(data.clinic)
+      }
+      
+      // Mark setup as complete and redirect to dashboard
+      // await markSetupComplete()
+      router.push('/dashboard');
+    } catch (error) {
+      console.error('Setup completion failed:', error);
+      // Handle error - show toast or error message
+    }
+  };
+
+  const handleBack = () => {
+    // Navigate back to plan selection
+    router.push('/onboarding/plan-selection');
+  };
+
+  // Get subscription ID from user or URL params
+  const subscriptionId = user?.subscriptionId || 'temp-subscription-id';
+
+  return (
+    <OnboardingFlow
+      subscriptionId={subscriptionId}
+      planType={planType}
+      onComplete={handleOnboardingComplete}
+      onBack={handleBack}
+    />
+  );
+}

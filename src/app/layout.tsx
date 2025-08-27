@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { SessionProvider } from "@/providers/SessionProvider";
 import { ThemeProvider } from "@/providers/ThemeProvider";
+import { QueryClientProvider } from "@/providers/QueryClientProvider";
+import { Toaster } from "sonner";
 import { locales, defaultLocale } from '@/i18n/config';
 import "./globals.css";
 
@@ -36,11 +38,20 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <ThemeProvider>
-          <SessionProvider>
-            {children}
-          </SessionProvider>
-        </ThemeProvider>
+        <QueryClientProvider>
+          <ThemeProvider>
+            <SessionProvider>
+              {children}
+              <Toaster 
+                position="top-right"
+                richColors
+                closeButton
+                expand={true}
+                duration={4000}
+              />
+            </SessionProvider>
+          </ThemeProvider>
+        </QueryClientProvider>
       </body>
     </html>
   );

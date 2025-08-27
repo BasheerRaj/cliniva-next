@@ -11,10 +11,16 @@ declare module "next-auth" {
       lastName: string;
       role: string;
       isActive: boolean;
-      organizationId?: string;
-      clinicId?: string;
-      complexId?: string;
+      emailVerified?: boolean;
+      organizationId?: string | null;
+      clinicId?: string | null;
+      complexId?: string | null;
       setupComplete?: boolean;
+      subscriptionId?: string | null;
+      onboardingComplete?: boolean;
+      onboardingProgress?: string[];
+      planType?: string | null;
+      isOwner?: boolean;
     } & DefaultSession["user"];
   }
 
@@ -25,10 +31,16 @@ declare module "next-auth" {
     lastName: string;
     role: string;
     isActive: boolean;
-    organizationId?: string;
-    clinicId?: string;
-    complexId?: string;
+    emailVerified?: boolean;
+    organizationId?: string | null;
+    clinicId?: string | null;
+    complexId?: string | null;
     setupComplete?: boolean;
+    subscriptionId?: string | null;
+    onboardingComplete?: boolean;
+    onboardingProgress?: string[];
+    planType?: string | null;
+    isOwner?: boolean;
     accessToken?: string;
   }
 }
@@ -43,10 +55,16 @@ declare module "next-auth/jwt" {
       lastName: string;
       role: string;
       isActive: boolean;
-      organizationId?: string;
-      clinicId?: string;
-      complexId?: string;
+      emailVerified?: boolean;
+      organizationId?: string | null;
+      clinicId?: string | null;
+      complexId?: string | null;
       setupComplete?: boolean;
+      subscriptionId?: string | null;
+      onboardingComplete?: boolean;
+      onboardingProgress?: string[];
+      planType?: string | null;
+      isOwner?: boolean;
     };
   }
 } 

@@ -106,7 +106,7 @@ export const ComplexOverviewForm: React.FC<ComplexOverviewFormProps> = ({
   const [isBasicInfoExpanded, setIsBasicInfoExpanded] = useState(true);
   const [isBusinessProfileExpanded, setIsBusinessProfileExpanded] = useState(false);
   const [isDepartmentsExpanded, setIsDepartmentsExpanded] = useState(false);
-  const [useInheritance, setUseInheritance] = useState(false);
+  const [useInheritance, setUseInheritance] = useState(Boolean(organizationData));
   const [allDepartments, setAllDepartments] = useState<Department[]>([]);
 
   // Load departments on component mount
@@ -126,7 +126,7 @@ export const ComplexOverviewForm: React.FC<ComplexOverviewFormProps> = ({
   // Apply data inheritance from organization if available and requested
   const getInheritedValue = (field: keyof ComplexOverviewDto, currentValue?: any) => {
     if (!useInheritance || !organizationData || currentValue) return currentValue;
-    return organizationData[field];
+    return organizationData.overview?.[field];
   };
 
   const form = useForm<ComplexOverviewFormData>({
@@ -140,8 +140,8 @@ export const ComplexOverviewForm: React.FC<ComplexOverviewFormProps> = ({
       yearEstablished: getInheritedValue('yearEstablished', initialData.yearEstablished),
       mission: getInheritedValue('mission', initialData.mission) || '',
       vision: getInheritedValue('vision', initialData.vision) || '',
-      overview: initialData.overview || '',
-      goals: initialData.goals || '',
+      overview: getInheritedValue('overview', initialData.overview) || '',
+      goals: getInheritedValue('goals', initialData.goals) || '',
       ceoName: getInheritedValue('ceoName', initialData.ceoName) || '',
       departments: initialData.departments || (
         // Convert legacy departmentIds/newDepartmentNames to departments format
@@ -178,11 +178,13 @@ export const ComplexOverviewForm: React.FC<ComplexOverviewFormProps> = ({
       const currentValues = form.getValues();
       form.reset({
         ...currentValues,
-        logoUrl: currentValues.logoUrl || organizationData.logoUrl || '',
-        yearEstablished: currentValues.yearEstablished || organizationData.yearEstablished,
-        mission: currentValues.mission || organizationData.mission || '',
-        vision: currentValues.vision || organizationData.vision || '',
-        ceoName: currentValues.ceoName || organizationData.ceoName || ''
+        logoUrl: currentValues.logoUrl || organizationData.overview?.logoUrl || '',
+        yearEstablished: currentValues.yearEstablished || organizationData.overview?.yearEstablished,
+        mission: currentValues.mission || organizationData.overview?.mission || '',
+        vision: currentValues.vision || organizationData.overview?.vision || '',
+        overview: currentValues.overview || organizationData.overview?.overview || '',
+        goals: currentValues.goals || organizationData.overview?.goals || '',
+        ceoName: currentValues.ceoName || organizationData.overview?.ceoName || ''
       });
       toast.success('Inherited data from organization');
     }
@@ -280,7 +282,7 @@ export const ComplexOverviewForm: React.FC<ComplexOverviewFormProps> = ({
                 <div>
                   <h3 className="font-medium text-blue-900">Inherit from Organization</h3>
                   <p className="text-sm text-blue-700">
-                    Copy business information from "{organizationData.name}"
+                    Copy business information from "{organizationData.overview?.name || 'Organization'}"
                   </p>
                 </div>
               </div>

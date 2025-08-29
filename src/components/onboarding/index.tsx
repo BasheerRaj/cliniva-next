@@ -1,7 +1,7 @@
 export { OrganizationOverviewForm } from './OrganizationOverviewForm';
 export { OrganizationContactForm } from './OrganizationContactForm';  
 export { OrganizationLegalForm } from './OrganizationLegalForm';
-export { default as ComplexOverviewForm } from './forms/ComplexOverviewForm';
+export { ComplexOverviewForm } from './forms/ComplexOverviewForm';
 export { default as ComplexWorkingHoursForm } from './ComplexWorkingHoursForm';
 
 // Export the new Complex forms

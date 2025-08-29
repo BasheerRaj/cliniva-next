@@ -1,77 +1,37 @@
 'use client';
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ChevronLeftIcon, ChevronRightIcon, ChevronDownIcon, ChevronUpIcon, PlusIcon, TrashIcon, PhoneIcon, MapPinIcon, UserIcon, GlobeIcon, BuildingIcon, StethoscopeIcon } from "lucide-react";
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { 
+  ChevronLeftIcon, 
+  ChevronRightIcon, 
+  ChevronDownIcon, 
+  ChevronUpIcon,
+  MapPinIcon, 
+  PhoneIcon, 
+  MailIcon, 
+  GlobeIcon,
+  PlusIcon,
+  TrashIcon,
+  StethoscopeIcon
+} from 'lucide-react';
 import { toast } from 'sonner';
-import { ClinicContactDto, PhoneNumberDto, AddressDto, EmergencyContactDto, SocialMediaLinksDto } from '@/types/onboarding';
+import { clinicContactSchema, type ClinicContact } from '@/lib/validation/onboarding';
+import { ClinicContactDto } from '@/types/onboarding';
 import { saveClinicContact } from '@/api/onboardingApiClient';
-import { useUniqueValidation, getValidationStatusClass, getValidationMessage } from '@/hooks/useUniqueValidation';
-
-// Phone number validation schema
-const phoneNumberSchema = z.object({
-  number: z.string()
-    .min(10, 'Phone number must be at least 10 digits')
-    .max(15, 'Phone number must be less than 15 digits'),
-  type: z.enum(['primary', 'secondary', 'emergency', 'fax', 'mobile'], {
-    message: 'Please select a phone type'
-  }),
-  label: z.string().optional()
-});
-
-// Address validation schema
-const addressSchema = z.object({
-  street: z.string().optional(),
-  city: z.string().optional(),
-  state: z.string().optional(),
-  postalCode: z.string().optional(),
-  country: z.string().optional(),
-  googleLocation: z.string().optional()
-});
-
-// Emergency contact validation schema
-const emergencyContactSchema = z.object({
-  name: z.string().optional(),
-  phone: z.string().optional(),
-  email: z.string().email('Invalid email format').optional().or(z.literal('')),
-  relationship: z.string().optional()
-});
-
-// Social media links validation schema
-const socialMediaLinksSchema = z.object({
-  facebook: z.string().optional().refine((val) => !val || val === '' || z.string().url().safeParse(val).success, { message: 'Invalid Facebook URL' }),
-  instagram: z.string().optional().refine((val) => !val || val === '' || z.string().url().safeParse(val).success, { message: 'Invalid Instagram URL' }),
-  twitter: z.string().optional().refine((val) => !val || val === '' || z.string().url().safeParse(val).success, { message: 'Invalid Twitter URL' }),
-  linkedin: z.string().optional().refine((val) => !val || val === '' || z.string().url().safeParse(val).success, { message: 'Invalid LinkedIn URL' }),
-  whatsapp: z.string().optional().refine((val) => !val || val === '' || z.string().url().safeParse(val).success, { message: 'Invalid WhatsApp URL' }),
-  youtube: z.string().optional().refine((val) => !val || val === '' || z.string().url().safeParse(val).success, { message: 'Invalid YouTube URL' })
-});
-
-// Form validation schema matching ClinicContactDto
-const clinicContactSchema = z.object({
-  phoneNumbers: z.array(phoneNumberSchema).min(1, 'At least one phone number is required'),
-  email: z.string().email('Invalid email format').optional().or(z.literal('')),
-  address: addressSchema.optional(),
-  emergencyContact: emergencyContactSchema.optional(),
-  socialMediaLinks: socialMediaLinksSchema.optional()
-});
-
-type ClinicContactFormData = z.infer<typeof clinicContactSchema>;
 
 interface ClinicContactFormProps {
   onNext: (data: ClinicContactDto) => void;
   onPrevious: () => void;
   initialData?: Partial<ClinicContactDto>;
-  parentData?: any; // Complex or Organization data for inheritance
   isLoading?: boolean;
   planType?: 'company' | 'complex' | 'clinic';
   formData?: any;
@@ -82,19 +42,19 @@ export const ClinicContactForm: React.FC<ClinicContactFormProps> = ({
   onNext,
   onPrevious,
   initialData = {},
-  parentData,
-  isLoading = false
+  isLoading = false,
+  planType,
+  formData,
+  currentStep
 }) => {
-  const [isContactExpanded, setIsContactExpanded] = useState(true);
-  const [isAddressExpanded, setIsAddressExpanded] = useState(false);
+  const [isAddressExpanded, setIsAddressExpanded] = useState(true);
+  const [isContactExpanded, setIsContactExpanded] = useState(false);
   const [isEmergencyExpanded, setIsEmergencyExpanded] = useState(false);
-  const [isSocialExpanded, setIsSocialExpanded] = useState(false);
-  const [useInheritance, setUseInheritance] = useState(false);
+  const [isSocialMediaExpanded, setIsSocialMediaExpanded] = useState(false);
 
-  const form = useForm<ClinicContactFormData>({
+  const form = useForm<ClinicContact>({
     resolver: zodResolver(clinicContactSchema),
     defaultValues: {
-      phoneNumbers: initialData.phoneNumbers || [{ number: '', type: 'primary', label: '' }],
       address: initialData.address || {
         street: '',
         city: '',
@@ -104,6 +64,10 @@ export const ClinicContactForm: React.FC<ClinicContactFormProps> = ({
         googleLocation: ''
       },
       email: initialData.email || '',
+      phoneNumbers: initialData.phoneNumbers?.map(phone => ({
+        ...phone,
+        type: phone.type || 'primary'
+      })) || [{ number: '', type: 'primary' as const, label: '' }],
       emergencyContact: initialData.emergencyContact || {
         name: '',
         phone: '',
@@ -118,94 +82,21 @@ export const ClinicContactForm: React.FC<ClinicContactFormProps> = ({
         whatsapp: '',
         youtube: ''
       }
-    },
-    mode: 'onChange' // Enable real-time validation
+    }
   });
-
-  // Trigger validation when form values change
-  useEffect(() => {
-    const subscription = form.watch((value, { name, type }) => {
-      if (type === 'change' && name) {
-        form.trigger(name);
-      }
-    });
-    return () => subscription.unsubscribe();
-  }, [form]);
 
   const { fields: phoneFields, append: appendPhone, remove: removePhone } = useFieldArray({
     control: form.control,
     name: 'phoneNumbers'
   });
 
-  // Real-time validation for email uniqueness
-  const currentEmail = form.watch('email') || '';
-  const isEditingExistingEmail = Boolean(
-    initialData?.email && 
-    initialData.email.trim().length > 0 && 
-    currentEmail.trim().toLowerCase() === initialData.email.trim().toLowerCase()
-  );
-  
-  const emailValidation = useUniqueValidation(
-    currentEmail,
-    'email',
-    800, // 800ms debounce delay
-    undefined,
-    isEditingExistingEmail // Skip validation if editing existing email
-  );
-
-  const handleInheritanceToggle = () => {
-    const newUseInheritance = !useInheritance;
-    setUseInheritance(newUseInheritance);
-    
-    if (newUseInheritance && parentData) {
-      // Apply inheritance by updating form values
-      const currentValues = form.getValues();
-      
-      // Inherit contact information (prefer complex over organization)
-      form.reset({
-        phoneNumbers: currentValues.phoneNumbers?.length && currentValues.phoneNumbers[0]?.number ? 
-          currentValues.phoneNumbers : 
-          parentData.phoneNumbers || [{ number: '', type: 'primary' }],
-        email: currentValues.email || parentData.email || '',
-        address: {
-          street: currentValues.address?.street || parentData.address?.street || '',
-          city: currentValues.address?.city || parentData.address?.city || '',
-          state: currentValues.address?.state || parentData.address?.state || '',
-          postalCode: currentValues.address?.postalCode || parentData.address?.postalCode || '',
-          country: currentValues.address?.country || parentData.address?.country || '',
-          googleLocation: currentValues.address?.googleLocation || parentData.address?.googleLocation || ''
-        },
-        emergencyContact: {
-          name: currentValues.emergencyContact?.name || parentData.emergencyContact?.name || '',
-          phone: currentValues.emergencyContact?.phone || parentData.emergencyContact?.phone || '',
-          email: currentValues.emergencyContact?.email || parentData.emergencyContact?.email || '',
-          relationship: currentValues.emergencyContact?.relationship || parentData.emergencyContact?.relationship || ''
-        },
-        socialMediaLinks: {
-          facebook: currentValues.socialMediaLinks?.facebook || parentData.socialMediaLinks?.facebook || '',
-          instagram: currentValues.socialMediaLinks?.instagram || parentData.socialMediaLinks?.instagram || '',
-          twitter: currentValues.socialMediaLinks?.twitter || parentData.socialMediaLinks?.twitter || '',
-          linkedin: currentValues.socialMediaLinks?.linkedin || parentData.socialMediaLinks?.linkedin || '',
-          whatsapp: currentValues.socialMediaLinks?.whatsapp || parentData.socialMediaLinks?.whatsapp || '',
-          youtube: currentValues.socialMediaLinks?.youtube || parentData.socialMediaLinks?.youtube || ''
-        }
-      });
-      
-      toast.success(`Inherited contact data from ${parentData.type === 'complex' ? 'complex' : 'organization'}`);
-    }
-  };
-
-  const addPhoneNumber = () => {
-    appendPhone({ number: '', type: 'secondary', label: '' });
-  };
-
-  const onSubmit = async (data: ClinicContactFormData) => {
+  const onSubmit = async (data: ClinicContact) => {
     try {
       // Transform form data to ClinicContactDto
       const contactData: ClinicContactDto = {
-        phoneNumbers: data.phoneNumbers?.filter(phone => phone.number.trim() !== ''),
-        email: data.email || undefined,
         address: data.address,
+        email: data.email || undefined,
+        phoneNumbers: data.phoneNumbers?.filter(phone => phone.number.trim() !== ''),
         emergencyContact: data.emergencyContact,
         socialMediaLinks: data.socialMediaLinks
       };
@@ -220,20 +111,10 @@ export const ClinicContactForm: React.FC<ClinicContactFormProps> = ({
         throw new Error(response.message || 'Failed to save clinic contact information');
       }
     } catch (error: any) {
-      console.error('Error saving clinic contact:', error);
-      
-      if (error.validationError && error.errors) {
-        // Handle field-specific validation errors
-        error.errors.forEach((err: any) => {
-          form.setError(err.field, {
-            type: 'manual',
-            message: err.message
-          });
-        });
-        toast.error('Please check the form for errors');
-      } else {
-        toast.error(error.message || 'Failed to save clinic contact information');
-      }
+      console.error('Error saving clinic contact information:', error);
+      toast.error('Failed to save clinic contact information', {
+        description: error.message || 'An unexpected error occurred'
+      });
     }
   };
 
@@ -247,204 +128,17 @@ export const ClinicContactForm: React.FC<ClinicContactFormProps> = ({
         </div>
         
         <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          Clinic Contact Information
+          Contact Information
         </h1>
         <p className="text-gray-600">
-          Provide contact details for your clinic
+          Provide contact details for your clinic including address, phone numbers, and emergency contacts
         </p>
       </div>
-
-      {/* Data Inheritance Option */}
-      {parentData && (
-        <Card className="mb-6 border-blue-200 bg-blue-50">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <BuildingIcon className="h-5 w-5 text-blue-600" />
-                <div>
-                  <h3 className="font-medium text-blue-900">
-                    Inherit from {parentData.type === 'complex' ? 'Complex' : 'Organization'}
-                  </h3>
-                  <p className="text-sm text-blue-700">
-                    Copy contact information from "{parentData.name}"
-                  </p>
-                </div>
-              </div>
-              <Button
-                type="button"
-                variant={useInheritance ? "default" : "outline"}
-                size="sm"
-                onClick={handleInheritanceToggle}
-              >
-                {useInheritance ? 'Using Inherited Data' : `Use ${parentData.type === 'complex' ? 'Complex' : 'Organization'} Data`}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           
-          {/* Basic Contact Information */}
-          <Card>
-            <Collapsible open={isContactExpanded} onOpenChange={setIsContactExpanded}>
-              <CollapsibleTrigger asChild>
-                <div className="flex items-center justify-between p-6 cursor-pointer hover:bg-gray-50">
-                  <div className="flex items-center gap-3">
-                    <PhoneIcon className="h-5 w-5 text-primary" />
-                    <div>
-                      <h2 className="text-xl font-semibold text-gray-900">Basic Contact</h2>
-                      <p className="text-sm text-gray-600">Phone numbers and email</p>
-                    </div>
-                  </div>
-                  {isContactExpanded ? (
-                    <ChevronUpIcon className="h-5 w-5 text-gray-500" />
-                  ) : (
-                    <ChevronDownIcon className="h-5 w-5 text-gray-500" />
-                  )}
-                </div>
-              </CollapsibleTrigger>
-              
-              <CollapsibleContent>
-                <CardContent className="px-6 pb-6 pt-0 space-y-4">
-                  
-                  {/* Phone Numbers */}
-                  <div className="space-y-3">
-                    <Label className="text-base font-medium">Phone Numbers</Label>
-                    
-                    {phoneFields.map((field, index) => (
-                      <div key={field.id} className="flex items-end gap-3">
-                        <div className="flex-1">
-                          <FormField
-                            control={form.control}
-                            name={`phoneNumbers.${index}.number`}
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormControl>
-                                  <Input
-                                    {...field}
-                                    placeholder="Phone number"
-                                    className="h-12"
-                                    disabled={isLoading}
-                                  />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        </div>
-                        
-                        <div className="w-32">
-                          <FormField
-                            control={form.control}
-                            name={`phoneNumbers.${index}.type`}
-                            render={({ field }) => (
-                              <FormItem>
-                                <Select onValueChange={field.onChange} value={field.value}>
-                                  <SelectTrigger className="h-12">
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="primary">Primary</SelectItem>
-                                    <SelectItem value="secondary">Secondary</SelectItem>
-                                    <SelectItem value="emergency">Emergency</SelectItem>
-                                    <SelectItem value="fax">Fax</SelectItem>
-                                    <SelectItem value="mobile">Mobile</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        </div>
-                        
-                        <div className="w-24">
-                          <FormField
-                            control={form.control}
-                            name={`phoneNumbers.${index}.label`}
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormControl>
-                                  <Input
-                                    {...field}
-                                    placeholder="Label"
-                                    className="h-12"
-                                    disabled={isLoading}
-                                  />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        </div>
-                        
-                        {phoneFields.length > 1 && (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="icon"
-                            onClick={() => removePhone(index)}
-                            className="h-12 w-12 shrink-0"
-                          >
-                            <TrashIcon className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
-                    ))}
-                    
-                    {phoneFields.length < 5 && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={addPhoneNumber}
-                        className="w-full h-12 border-dashed"
-                        disabled={isLoading}
-                      >
-                        <PlusIcon className="h-4 w-4 mr-2" />
-                        Add Phone Number
-                      </Button>
-                    )}
-                  </div>
-
-                  {/* Email */}
-                  <FormField
-                    control={form.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-base font-medium">Email Address</FormLabel>
-                        <FormControl>
-                          <Input
-                            {...field}
-                            type="email"
-                            placeholder="clinic@example.com"
-                            className="h-12"
-                            disabled={isLoading || emailValidation.isChecking}
-                          />
-                        </FormControl>
-                        {useInheritance && parentData?.email && (
-                          <div className="text-xs text-blue-600">
-                            Inherited: {parentData.email}
-                          </div>
-                        )}
-                        {emailValidation.isChecking && (
-                          <p className="text-sm text-blue-600">Validating email...</p>
-                        )}
-                        {emailValidation.hasChecked && !emailValidation.isAvailable && (
-                          <p className="text-sm text-red-600">{emailValidation.message}</p>
-                        )}
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                </CardContent>
-              </CollapsibleContent>
-            </Collapsible>
-          </Card>
-
-          {/* Address Information */}
+          {/* Address Information Section */}
           <Card>
             <Collapsible open={isAddressExpanded} onOpenChange={setIsAddressExpanded}>
               <CollapsibleTrigger asChild>
@@ -452,8 +146,8 @@ export const ClinicContactForm: React.FC<ClinicContactFormProps> = ({
                   <div className="flex items-center gap-3">
                     <MapPinIcon className="h-5 w-5 text-primary" />
                     <div>
-                      <h2 className="text-xl font-semibold text-gray-900">Address</h2>
-                      <p className="text-sm text-gray-600">Physical location details</p>
+                      <h2 className="text-xl font-semibold text-gray-900">Address Information</h2>
+                      <p className="text-sm text-gray-600">Physical location and address details</p>
                     </div>
                   </div>
                   {isAddressExpanded ? (
@@ -477,7 +171,7 @@ export const ClinicContactForm: React.FC<ClinicContactFormProps> = ({
                         <FormControl>
                           <Input
                             {...field}
-                            placeholder="123 Medical Center Drive"
+                            placeholder="123 Medical Center Street"
                             className="h-12"
                             disabled={isLoading}
                           />
@@ -498,7 +192,7 @@ export const ClinicContactForm: React.FC<ClinicContactFormProps> = ({
                           <FormControl>
                             <Input
                               {...field}
-                              placeholder="City name"
+                              placeholder="Riyadh"
                               className="h-12"
                               disabled={isLoading}
                             />
@@ -508,7 +202,7 @@ export const ClinicContactForm: React.FC<ClinicContactFormProps> = ({
                       )}
                     />
 
-                    {/* State */}
+                    {/* State/Province */}
                     <FormField
                       control={form.control}
                       name="address.state"
@@ -518,7 +212,7 @@ export const ClinicContactForm: React.FC<ClinicContactFormProps> = ({
                           <FormControl>
                             <Input
                               {...field}
-                              placeholder="State or Province"
+                              placeholder="Riyadh Province"
                               className="h-12"
                               disabled={isLoading}
                             />
@@ -560,7 +254,7 @@ export const ClinicContactForm: React.FC<ClinicContactFormProps> = ({
                           <FormControl>
                             <Input
                               {...field}
-                              placeholder="Country name"
+                              placeholder="Saudi Arabia"
                               className="h-12"
                               disabled={isLoading}
                             />
@@ -581,11 +275,14 @@ export const ClinicContactForm: React.FC<ClinicContactFormProps> = ({
                         <FormControl>
                           <Input
                             {...field}
-                            placeholder="Google Maps URL or Place ID"
+                            placeholder="https://maps.google.com/... or coordinates"
                             className="h-12"
                             disabled={isLoading}
                           />
                         </FormControl>
+                        <div className="text-xs text-gray-500">
+                          You can paste a Google Maps link or enter coordinates
+                        </div>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -596,16 +293,166 @@ export const ClinicContactForm: React.FC<ClinicContactFormProps> = ({
             </Collapsible>
           </Card>
 
-          {/* Emergency Contact */}
+          {/* Contact Information Section */}
+          <Card>
+            <Collapsible open={isContactExpanded} onOpenChange={setIsContactExpanded}>
+              <CollapsibleTrigger asChild>
+                <div className="flex items-center justify-between p-6 cursor-pointer hover:bg-gray-50">
+                  <div className="flex items-center gap-3">
+                    <PhoneIcon className="h-5 w-5 text-primary" />
+                    <div>
+                      <h2 className="text-xl font-semibold text-gray-900">Contact Information</h2>
+                      <p className="text-sm text-gray-600">Phone numbers and email address</p>
+                    </div>
+                  </div>
+                  {isContactExpanded ? (
+                    <ChevronUpIcon className="h-5 w-5 text-gray-500" />
+                  ) : (
+                    <ChevronDownIcon className="h-5 w-5 text-gray-500" />
+                  )}
+                </div>
+              </CollapsibleTrigger>
+              
+              <CollapsibleContent>
+                <CardContent className="px-6 pb-6 pt-0 space-y-4">
+
+                  {/* Email */}
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email Address</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            type="email"
+                            placeholder="clinic@example.com"
+                            className="h-12"
+                            disabled={isLoading}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Phone Numbers */}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <FormLabel className="text-base font-medium">Phone Numbers</FormLabel>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => appendPhone({ number: '', type: 'secondary', label: '' })}
+                        disabled={isLoading}
+                      >
+                        <PlusIcon className="h-4 w-4 mr-2" />
+                        Add Phone
+                      </Button>
+                    </div>
+
+                    {phoneFields.map((field, index) => (
+                      <div key={field.id} className="grid grid-cols-1 md:grid-cols-4 gap-3 p-4 border rounded-lg bg-gray-50">
+                        {/* Phone Number */}
+                        <FormField
+                          control={form.control}
+                          name={`phoneNumbers.${index}.number`}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-sm">Phone Number</FormLabel>
+                              <FormControl>
+                                <Input
+                                  {...field}
+                                  placeholder="+966 11 123 4567"
+                                  className="h-10"
+                                  disabled={isLoading}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        {/* Phone Type */}
+                        <FormField
+                          control={form.control}
+                          name={`phoneNumbers.${index}.type`}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-sm">Type</FormLabel>
+                              <Select onValueChange={field.onChange} value={field.value} disabled={isLoading}>
+                                <SelectTrigger className="h-10">
+                                  <SelectValue placeholder="Select type" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="primary">Primary</SelectItem>
+                                  <SelectItem value="secondary">Secondary</SelectItem>
+                                  <SelectItem value="emergency">Emergency</SelectItem>
+                                  <SelectItem value="fax">Fax</SelectItem>
+                                  <SelectItem value="mobile">Mobile</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        {/* Label */}
+                        <FormField
+                          control={form.control}
+                          name={`phoneNumbers.${index}.label`}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-sm">Label</FormLabel>
+                              <FormControl>
+                                <Input
+                                  {...field}
+                                  placeholder="Main office"
+                                  className="h-10"
+                                  disabled={isLoading}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        {/* Remove Button */}
+                        <div className="flex items-end">
+                          {phoneFields.length > 1 && (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => removePhone(index)}
+                              disabled={isLoading}
+                              className="h-10 w-full"
+                            >
+                              <TrashIcon className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                </CardContent>
+              </CollapsibleContent>
+            </Collapsible>
+          </Card>
+
+          {/* Emergency Contact Section */}
           <Card>
             <Collapsible open={isEmergencyExpanded} onOpenChange={setIsEmergencyExpanded}>
               <CollapsibleTrigger asChild>
                 <div className="flex items-center justify-between p-6 cursor-pointer hover:bg-gray-50">
                   <div className="flex items-center gap-3">
-                    <UserIcon className="h-5 w-5 text-primary" />
+                    <PhoneIcon className="h-5 w-5 text-red-500" />
                     <div>
                       <h2 className="text-xl font-semibold text-gray-900">Emergency Contact</h2>
-                      <p className="text-sm text-gray-600">Primary emergency contact person</p>
+                      <p className="text-sm text-gray-600">Emergency contact person for the clinic</p>
                     </div>
                   </div>
                   {isEmergencyExpanded ? (
@@ -630,50 +477,7 @@ export const ClinicContactForm: React.FC<ClinicContactFormProps> = ({
                           <FormControl>
                             <Input
                               {...field}
-                              placeholder="Dr. Jane Smith"
-                              className="h-12"
-                              disabled={isLoading}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    {/* Emergency Contact Phone */}
-                    <FormField
-                      control={form.control}
-                      name="emergencyContact.phone"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Contact Phone</FormLabel>
-                          <FormControl>
-                            <Input
-                              {...field}
-                              placeholder="+1234567890"
-                              className="h-12"
-                              disabled={isLoading}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Emergency Contact Email */}
-                    <FormField
-                      control={form.control}
-                      name="emergencyContact.email"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Contact Email</FormLabel>
-                          <FormControl>
-                            <Input
-                              {...field}
-                              type="email"
-                              placeholder="emergency@clinic.com"
+                              placeholder="Dr. John Smith"
                               className="h-12"
                               disabled={isLoading}
                             />
@@ -704,24 +508,68 @@ export const ClinicContactForm: React.FC<ClinicContactFormProps> = ({
                     />
                   </div>
 
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Emergency Contact Phone */}
+                    <FormField
+                      control={form.control}
+                      name="emergencyContact.phone"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Phone Number</FormLabel>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              type="tel"
+                              placeholder="+966 50 123 4567"
+                              className="h-12"
+                              disabled={isLoading}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* Emergency Contact Email */}
+                    <FormField
+                      control={form.control}
+                      name="emergencyContact.email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email Address</FormLabel>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              type="email"
+                              placeholder="emergency@clinic.com"
+                              className="h-12"
+                              disabled={isLoading}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
                 </CardContent>
               </CollapsibleContent>
             </Collapsible>
           </Card>
 
-          {/* Social Media Links */}
+          {/* Social Media Section */}
           <Card>
-            <Collapsible open={isSocialExpanded} onOpenChange={setIsSocialExpanded}>
+            <Collapsible open={isSocialMediaExpanded} onOpenChange={setIsSocialMediaExpanded}>
               <CollapsibleTrigger asChild>
                 <div className="flex items-center justify-between p-6 cursor-pointer hover:bg-gray-50">
                   <div className="flex items-center gap-3">
                     <GlobeIcon className="h-5 w-5 text-primary" />
                     <div>
-                      <h2 className="text-xl font-semibold text-gray-900">Social Media & Web</h2>
-                      <p className="text-sm text-gray-600">Online presence and social profiles</p>
+                      <h2 className="text-xl font-semibold text-gray-900">Social Media & Web Presence</h2>
+                      <p className="text-sm text-gray-600">Social media links and online presence</p>
                     </div>
                   </div>
-                  {isSocialExpanded ? (
+                  {isSocialMediaExpanded ? (
                     <ChevronUpIcon className="h-5 w-5 text-gray-500" />
                   ) : (
                     <ChevronDownIcon className="h-5 w-5 text-gray-500" />
@@ -733,6 +581,26 @@ export const ClinicContactForm: React.FC<ClinicContactFormProps> = ({
                 <CardContent className="px-6 pb-6 pt-0 space-y-4">
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Website */}
+                    <FormField
+                      control={form.control}
+                      name="socialMediaLinks.website"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Website</FormLabel>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              placeholder="https://www.yourclinic.com"
+                              className="h-12"
+                              disabled={isLoading}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
                     {/* Facebook */}
                     <FormField
                       control={form.control}
@@ -752,7 +620,9 @@ export const ClinicContactForm: React.FC<ClinicContactFormProps> = ({
                         </FormItem>
                       )}
                     />
+                  </div>
 
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* Instagram */}
                     <FormField
                       control={form.control}
@@ -764,26 +634,6 @@ export const ClinicContactForm: React.FC<ClinicContactFormProps> = ({
                             <Input
                               {...field}
                               placeholder="https://instagram.com/yourclinic"
-                              className="h-12"
-                              disabled={isLoading}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    {/* Twitter */}
-                    <FormField
-                      control={form.control}
-                      name="socialMediaLinks.twitter"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Twitter</FormLabel>
-                          <FormControl>
-                            <Input
-                              {...field}
-                              placeholder="https://twitter.com/yourclinic"
                               className="h-12"
                               disabled={isLoading}
                             />
@@ -812,7 +662,9 @@ export const ClinicContactForm: React.FC<ClinicContactFormProps> = ({
                         </FormItem>
                       )}
                     />
+                  </div>
 
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* WhatsApp */}
                     <FormField
                       control={form.control}
@@ -823,7 +675,7 @@ export const ClinicContactForm: React.FC<ClinicContactFormProps> = ({
                           <FormControl>
                             <Input
                               {...field}
-                              placeholder="https://wa.me/1234567890"
+                              placeholder="https://wa.me/966501234567"
                               className="h-12"
                               disabled={isLoading}
                             />
@@ -843,7 +695,7 @@ export const ClinicContactForm: React.FC<ClinicContactFormProps> = ({
                           <FormControl>
                             <Input
                               {...field}
-                              placeholder="https://youtube.com/@yourclinic"
+                              placeholder="https://youtube.com/c/yourclinic"
                               className="h-12"
                               disabled={isLoading}
                             />
@@ -857,6 +709,24 @@ export const ClinicContactForm: React.FC<ClinicContactFormProps> = ({
                 </CardContent>
               </CollapsibleContent>
             </Collapsible>
+          </Card>
+
+          {/* Information Card */}
+          <Card className="border-green-200 bg-green-50">
+            <CardContent className="p-6">
+              <div className="flex items-start gap-3">
+                <StethoscopeIcon className="h-6 w-6 text-green-600 mt-0.5" />
+                <div>
+                  <h3 className="font-medium text-green-900 mb-2">Contact Information Guidelines</h3>
+                  <div className="text-sm text-green-700 space-y-1">
+                    <p>• <strong>Required:</strong> At least one phone number is recommended for patient contact.</p>
+                    <p>• <strong>Emergency Contact:</strong> Designate a person available for urgent clinic matters.</p>
+                    <p>• <strong>Social Media:</strong> Optional but helps patients find and connect with your clinic.</p>
+                    <p>• <strong>Privacy:</strong> All contact information can be updated later in clinic settings.</p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
           </Card>
 
           {/* Navigation Buttons */}
@@ -875,7 +745,7 @@ export const ClinicContactForm: React.FC<ClinicContactFormProps> = ({
             <div className="flex items-center gap-2">
               <Button
                 type="submit"
-                disabled={isLoading || !form.formState.isDirty || Object.keys(form.formState.errors).length > 0}
+                disabled={isLoading || !form.formState.isDirty}
                 className="flex items-center gap-2 min-w-[120px]"
               >
                 {isLoading ? (

@@ -13,7 +13,7 @@ export interface UniqueValidationState {
 /**
  * Custom hook for unique field validation with debouncing
  * @param value - The value to validate
- * @param validationType - The type of validation ('organizationName', 'complexName', 'clinicName', 'email', 'vatNumber', 'crNumber')
+ * @param validationType - The type of validation ('organizationName', 'complexName', 'clinicName', 'email', 'vatNumber', 'crNumber', 'medicalLicense')
  * @param delay - Debounce delay in milliseconds (default: 800ms)
  * @param additionalParams - Additional parameters for validation (e.g., organizationId for complexName)
  * @param skipValidation - Skip validation (useful when editing existing user data)
@@ -21,7 +21,7 @@ export interface UniqueValidationState {
  */
 export function useUniqueValidation(
   value: string,
-  validationType: 'organizationName' | 'complexName' | 'clinicName' | 'email' | 'vatNumber' | 'crNumber',
+  validationType: 'organizationName' | 'complexName' | 'clinicName' | 'email' | 'vatNumber' | 'crNumber' | 'medicalLicense',
   delay: number = 800,
   additionalParams?: { organizationId?: string; complexId?: string },
   skipValidation: boolean = false
@@ -84,6 +84,9 @@ export function useUniqueValidation(
             break;
           case 'crNumber':
             result = await validationApi.validateCrNumber(debouncedValue);
+            break;
+          case 'medicalLicense':
+            result = await validationApi.validateMedicalLicense(debouncedValue);
             break;
           default:
             throw new Error(`Unknown validation type: ${validationType}`);

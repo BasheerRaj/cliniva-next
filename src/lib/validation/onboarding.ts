@@ -74,6 +74,49 @@ export const organizationStepSchema = z.object({
 });
 
 // ========================================
+// CLINIC SCHEMAS
+// ========================================
+
+export const clinicContactSchema = z.object({
+  // Address information
+  address: z.object({
+    street: z.string().optional(),
+    city: z.string().optional(),
+    state: z.string().optional(),
+    postalCode: z.string().optional(),
+    country: z.string().optional(),
+    googleLocation: z.string().optional()
+  }).optional(),
+  
+  // Contact information
+  email: z.string().email('Please enter a valid email').optional().or(z.literal('')),
+  phoneNumbers: z.array(z.object({
+    number: z.string().regex(phoneRegex, 'Please enter a valid phone number'),
+    type: z.enum(['primary', 'secondary', 'emergency', 'fax', 'mobile']),
+    label: z.string().optional()
+  })).optional(),
+  
+  // Emergency contact
+  emergencyContact: z.object({
+    name: z.string().optional(),
+    phone: z.string().regex(phoneRegex, 'Please enter a valid emergency contact phone').optional().or(z.literal('')),
+    email: z.string().email('Please enter a valid emergency contact email').optional().or(z.literal('')),
+    relationship: z.string().optional()
+  }).optional(),
+  
+  // Social media links - extended to include all fields
+  socialMediaLinks: z.object({
+    facebook: urlSchema,
+    instagram: urlSchema,
+    twitter: urlSchema,
+    linkedin: urlSchema,
+    whatsapp: urlSchema,
+    youtube: urlSchema,
+    website: urlSchema
+  }).optional()
+});
+
+// ========================================
 // TYPE EXPORTS
 // ========================================
 
@@ -81,3 +124,4 @@ export type OrganizationOverview = z.infer<typeof organizationOverviewSchema>;
 export type OrganizationContact = z.infer<typeof organizationContactSchema>;
 export type OrganizationLegal = z.infer<typeof organizationLegalSchema>;
 export type OrganizationStep = z.infer<typeof organizationStepSchema>;
+export type ClinicContact = z.infer<typeof clinicContactSchema>;

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from "react";
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from "@/components/ui/button";
@@ -11,42 +11,18 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ChevronLeftIcon, ChevronRightIcon, ChevronDownIcon, ChevronUpIcon, BuildingIcon, PlusIcon, TrashIcon, StethoscopeIcon } from "lucide-react";
+import { ChevronLeftIcon, ChevronRightIcon, ChevronDownIcon, ChevronUpIcon, BuildingIcon, StethoscopeIcon } from "lucide-react";
 import { toast } from 'sonner';
 import { ClinicOverviewDto } from '@/types/onboarding';
 import { saveClinicOverview } from '@/api/onboardingApiClient';
 import { LogoUpload } from '@/components/ui/logo-upload';
 import { useUniqueValidation, getValidationStatusClass, getValidationMessage } from '@/hooks/useUniqueValidation';
-import { useDepartmentsByComplex } from '@/hooks/api/useDepartments';
+import { useDepartmentsByComplex, useDepartments } from '@/hooks/api/useDepartments';
 import { DepartmentSearchInput, Department } from '@/components/ui/department-search-input';
 
-// Add service validation function
-const validateServiceNames = async (serviceNames: string[], complexDepartmentId?: string) => {
-  try {
-    const response = await fetch('/api/services/validate-names', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        serviceNames: serviceNames.filter(name => name.trim().length > 0),
-        complexDepartmentId
-      })
-    });
+// Services validation removed - handled in ClinicServicesCapacityForm
 
-    if (!response.ok) {
-      throw new Error('Validation request failed');
-    }
-
-    const result = await response.json();
-    return result;
-  } catch (error) {
-    console.error('Error validating service names:', error);
-    return { isValid: false, conflicts: [], suggestions: [], message: 'Validation failed' };
-  }
-};
-
-// Form validation schema matching new ClinicOverviewDto (without capacity fields)
+// Form validation schema matching new ClinicOverviewDto (without services and capacity fields)
 const clinicOverviewSchema = z.object({
   // Required fields
   name: z.string()
@@ -120,15 +96,7 @@ const clinicOverviewSchema = z.object({
     .optional()
     .or(z.literal('')),
     
-  complexDepartmentId: z.string().optional(),
-  
-  // Services that the clinic will offer
-  services: z.array(z.object({
-    name: z.string().min(1, 'Service name is required'),
-    description: z.string().optional(),
-    durationMinutes: z.number().min(5, 'Duration must be at least 5 minutes').max(480, 'Duration cannot exceed 8 hours').optional(),
-    price: z.number().min(0, 'Price cannot be negative').optional()
-  })).optional()
+  complexDepartmentId: z.string().optional()
 });
 
 type ClinicOverviewFormData = z.infer<typeof clinicOverviewSchema>;
@@ -153,22 +121,54 @@ export const ClinicOverviewForm: React.FC<ClinicOverviewFormProps> = ({
   parentData,
   availableDepartments = [], // Keep for backward compatibility
   isLoading = false,
+  planType,
   complexId
 }) => {
   const [isBasicInfoExpanded, setIsBasicInfoExpanded] = useState(true);
   const [isBusinessProfileExpanded, setIsBusinessProfileExpanded] = useState(false);
-  const [isServicesExpanded, setIsServicesExpanded] = useState(false);
   const [useInheritance, setUseInheritance] = useState(false);
 
-  // Load complex departments if complexId is provided
-  const { data: complexDepartments = [], isLoading: isDepartmentsLoading } = useDepartmentsByComplex(
-    complexId || parentData?.id || parentData?._id
+  // Determine which departments to load based on plan type
+  const effectiveComplexId = complexId || parentData?.id || parentData?._id;
+  const shouldLoadAllDepartments = planType === 'clinic';
+  const shouldLoadComplexDepartments = (planType === 'complex' || planType === 'company') && effectiveComplexId;
+
+  // Debug logging (console)
+  console.log('🏥 ClinicOverviewForm Department Loading:', {
+    planType,
+    complexId,
+    parentDataId: parentData?.id || parentData?._id,
+    effectiveComplexId,
+    shouldLoadAllDepartments,
+    shouldLoadComplexDepartments
+  });
+
+  // Load complex departments if complexId is provided (for complex/company plans)
+  const { data: complexDepartments = [], isLoading: isComplexDepartmentsLoading } = useDepartmentsByComplex(
+    shouldLoadComplexDepartments ? effectiveComplexId : undefined
   );
+  
+  // Load all departments for clinic plan
+  const { data: allDepartments = [], isLoading: isAllDepartmentsLoading } = useDepartments();
+
+  // Determine which departments to use and loading state
+  const departmentsToUse = shouldLoadAllDepartments ? allDepartments : complexDepartments;
+  const isDepartmentsLoading = shouldLoadAllDepartments ? isAllDepartmentsLoading : isComplexDepartmentsLoading;
+
+  // Debug logging for departments
+  console.log('🏥 Department Loading Results:', {
+    shouldLoadAllDepartments,
+    shouldLoadComplexDepartments,
+    allDepartmentsCount: allDepartments.length,
+    complexDepartmentsCount: complexDepartments.length,
+    departmentsToUseCount: departmentsToUse.length,
+    isDepartmentsLoading
+  });
   
   // Transform to expected format and merge with availableDepartments for compatibility
   const allAvailableDepartments = [
     ...availableDepartments,
-    ...complexDepartments.map(dept => ({
+    ...departmentsToUse.map(dept => ({
       id: dept._id,
       name: dept.name,
       description: dept.description
@@ -200,8 +200,7 @@ export const ClinicOverviewForm: React.FC<ClinicOverviewFormProps> = ({
       overview: initialData.overview || parentData?.overview || '',
       goals: initialData.goals || parentData?.goals || '',
       ceoName: initialData.ceoName || parentData?.ceoName || '',
-      complexDepartmentId: initialData.complexDepartmentId || '',
-      services: initialData.services || []
+      complexDepartmentId: initialData.complexDepartmentId || undefined
     },
     mode: 'onChange' // Enable real-time validation
   });
@@ -235,6 +234,22 @@ export const ClinicOverviewForm: React.FC<ClinicOverviewFormProps> = ({
     isEditingExistingName // Skip validation if editing existing clinic name
   );
 
+  // Real-time validation for medical license uniqueness
+  const currentLicense = form.watch('licenseNumber') || '';
+  const isEditingExistingLicense = Boolean(
+    initialData?.licenseNumber && 
+    initialData.licenseNumber.trim().length > 0 && 
+    currentLicense.trim().toLowerCase() === initialData.licenseNumber.trim().toLowerCase()
+  );
+  
+  const licenseValidation = useUniqueValidation(
+    currentLicense,
+    'medicalLicense',
+    800, // 800ms debounce delay
+    {},
+    isEditingExistingLicense || currentLicense.trim().length === 0 // Skip validation if editing existing license or empty
+  );
+
   const handleInheritanceToggle = () => {
     const newUseInheritance = !useInheritance;
     setUseInheritance(newUseInheritance);
@@ -258,8 +273,8 @@ export const ClinicOverviewForm: React.FC<ClinicOverviewFormProps> = ({
 
   const onSubmit = async (data: ClinicOverviewFormData) => {
     try {
-      // Validate department selection for complex/company plans
-      if (complexId && !data.complexDepartmentId) {
+      // Validate department selection for complex/company plans when complexId is provided
+      if ((planType === 'complex' || planType === 'company') && complexId && !data.complexDepartmentId) {
         form.setError('complexDepartmentId', {
           type: 'manual',
           message: 'Department selection is required for complex/company plans'
@@ -268,36 +283,16 @@ export const ClinicOverviewForm: React.FC<ClinicOverviewFormProps> = ({
         return;
       }
 
-      // Enhanced service validation
-      if (data.services && data.services.length > 0) {
-        const serviceNames = data.services
-          .map(s => s.name)
-          .filter(name => name && name.trim().length > 0);
+      // Services will be handled in the ClinicServicesCapacityForm step
 
-        if (serviceNames.length > 0) {
-          // Check for duplicates within the current form
-          const duplicates = serviceNames.filter((name, index) => 
-            serviceNames.findIndex(n => n.toLowerCase().trim() === name.toLowerCase().trim()) !== index
-          );
-
-          if (duplicates.length > 0) {
-            toast.error('Duplicate service names found', {
-              description: `Please remove duplicate services: ${[...new Set(duplicates)].join(', ')}`
-            });
-            return;
-          }
-
-          // Backend validation for comprehensive checking
-          const validation = await validateServiceNames(serviceNames, data.complexDepartmentId);
-          
-          if (!validation.isValid && validation.conflicts.length > 0) {
-            toast.error('Service name conflicts detected', {
-              description: `${validation.message}. Consider using: ${validation.suggestions.slice(0, 3).join(', ')}`
-            });
-            return;
-          }
-        }
-      }
+      // Debug: Log department selection
+      console.log('🔍 Frontend complexDepartmentId processing:', {
+        formValue: data.complexDepartmentId,
+        type: typeof data.complexDepartmentId,
+        length: data.complexDepartmentId?.length,
+        complexId: complexId,
+        parentData: parentData?.id || parentData?._id
+      });
 
       // Transform form data to ClinicOverviewDto
       const clinicData: ClinicOverviewDto = {
@@ -315,9 +310,10 @@ export const ClinicOverviewForm: React.FC<ClinicOverviewFormProps> = ({
         overview: data.overview || undefined,
         goals: data.goals || undefined,
         ceoName: data.ceoName || undefined,
-        complexDepartmentId: data.complexDepartmentId || undefined,
-        services: data.services || []
+        complexDepartmentId: data.complexDepartmentId && data.complexDepartmentId.trim() !== '' ? data.complexDepartmentId : undefined
       };
+
+      console.log('✅ Frontend final complexDepartmentId:', clinicData.complexDepartmentId);
 
       // Save to backend
       const response = await saveClinicOverview(clinicData);
@@ -362,6 +358,16 @@ export const ClinicOverviewForm: React.FC<ClinicOverviewFormProps> = ({
         <p className="text-gray-600">
           Set up your clinic with medical information and services
         </p>
+        
+        {/* Debug Information - Remove in production */}
+        {process.env.NODE_ENV === 'development' && (
+          <div className="text-xs text-gray-500 bg-gray-100 p-2 rounded mb-4">
+            <strong>Debug:</strong> Plan: {planType}, ComplexId: {complexId || 'none'}, 
+            EffectiveComplexId: {effectiveComplexId || 'none'}, 
+            Departments: {allAvailableDepartments.length}, 
+            Loading: {isDepartmentsLoading ? 'yes' : 'no'}
+          </div>
+        )}
       </div>
 
       {/* Data Inheritance Option */}
@@ -502,10 +508,19 @@ export const ClinicOverviewForm: React.FC<ClinicOverviewFormProps> = ({
                               {...field}
                               placeholder="ML123456"
                               className="h-12"
-                              disabled={isLoading}
+                              disabled={isLoading || licenseValidation.isChecking}
                             />
                           </FormControl>
                           <FormMessage />
+                          {licenseValidation.isChecking && currentLicense.trim().length > 0 && (
+                            <p className="text-sm text-blue-600">Checking license availability...</p>
+                          )}
+                          {licenseValidation.hasChecked && !licenseValidation.isAvailable && currentLicense.trim().length > 0 && (
+                            <p className="text-sm text-red-600">{licenseValidation.message}</p>
+                          )}
+                          {licenseValidation.hasChecked && licenseValidation.isAvailable && currentLicense.trim().length > 0 && (
+                            <p className="text-sm text-green-600">Medical license is available</p>
+                          )}
                         </FormItem>
                       )}
                     />
@@ -609,32 +624,41 @@ export const ClinicOverviewForm: React.FC<ClinicOverviewFormProps> = ({
                     />
                   </div>
 
-                  {/* Complex Department Selection */}
-                  {(allAvailableDepartments.length > 0 || isDepartmentsLoading || complexId) && (
+                  {/* Department Selection - Show for clinic plan always, and for complex/company plans when loading or when complexId exists */}
+                  {(planType === 'clinic' || (planType === 'complex' || planType === 'company') && (effectiveComplexId || isDepartmentsLoading || allAvailableDepartments.length > 0)) && (
                     <FormField
                       control={form.control}
                       name="complexDepartmentId"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="text-base font-medium">
-                            Complex Department {complexId ? '*' : '(Optional)'}
+                            {planType === 'clinic' ? 'Department (Optional)' : 
+                             (complexId ? 'Complex Department *' : 'Complex Department (Optional)')}
                           </FormLabel>
                           <Select 
-                            onValueChange={field.onChange} 
-                            value={field.value} 
+                            onValueChange={(value) => {
+                              // Handle "none" and empty string by converting to undefined
+                              field.onChange(value === '' || value === 'none' ? undefined : value);
+                            }} 
+                            value={field.value || 'none'} 
                             disabled={isLoading || isDepartmentsLoading}
                           >
                             <SelectTrigger className="h-12">
                               <SelectValue placeholder={
                                 isDepartmentsLoading 
                                   ? "Loading departments..." 
+                                  : planType === 'clinic'
+                                  ? "Select a department (optional)"
                                   : complexId
                                   ? "Select a department (required for complex/company plans)"
                                   : "Select a department"
                               } />
                             </SelectTrigger>
                             <SelectContent>
-                              {!complexId && <SelectItem value="">No department</SelectItem>}
+                              {(planType === 'clinic' || !effectiveComplexId) && <SelectItem value="none">No department</SelectItem>}
+                              {allAvailableDepartments.length === 0 && !isDepartmentsLoading && (planType === 'complex' || planType === 'company') && effectiveComplexId && (
+                                <SelectItem value="none" disabled>No departments assigned to this complex</SelectItem>
+                              )}
                               {allAvailableDepartments.map((dept) => (
                                 <SelectItem key={dept.id} value={dept.id}>
                                   <div className="flex flex-col">
@@ -650,7 +674,9 @@ export const ClinicOverviewForm: React.FC<ClinicOverviewFormProps> = ({
                             </SelectContent>
                           </Select>
                           <div className="text-xs text-gray-500">
-                            {complexId 
+                            {planType === 'clinic' 
+                              ? 'Optionally link this clinic to a department for organization purposes.'
+                              : complexId 
                               ? 'Link this clinic to a complex department for proper organization. This is required for complex/company plans.'
                               : 'Link this clinic to a complex department if applicable'
                             }
@@ -661,9 +687,14 @@ export const ClinicOverviewForm: React.FC<ClinicOverviewFormProps> = ({
                             </div>
                           )}
                           <FormMessage />
-                          {complexId && !field.value && (
+                          {(planType === 'complex' || planType === 'company') && effectiveComplexId && !field.value && (
                             <div className="text-xs text-red-600">
                               Department selection is required for complex/company plans
+                              {allAvailableDepartments.length === 0 && !isDepartmentsLoading && (
+                                <span className="block mt-1">
+                                  ⚠️ No departments found for this complex. Please ensure departments were selected during complex creation.
+                                </span>
+                              )}
                             </div>
                           )}
                         </FormItem>
@@ -838,216 +869,21 @@ export const ClinicOverviewForm: React.FC<ClinicOverviewFormProps> = ({
             </Collapsible>
           </Card>
 
-          {/* Services Section */}
-          <Card>
-            <Collapsible open={isServicesExpanded} onOpenChange={setIsServicesExpanded}>
-              <CollapsibleTrigger asChild>
-                <div className="flex items-center justify-between p-6 cursor-pointer hover:bg-gray-50">
-                  <div>
-                    <h2 className="text-xl font-semibold text-gray-900">Medical Services</h2>
-                    <p className="text-sm text-gray-600">Services offered by your clinic</p>
+          {/* Information Card - Services will be handled in the next step */}
+          <Card className="border-blue-200 bg-blue-50">
+            <CardContent className="p-6">
+              <div className="flex items-start gap-3">
+                <StethoscopeIcon className="h-6 w-6 text-blue-600 mt-0.5" />
+                <div>
+                  <h3 className="font-medium text-blue-900 mb-2">Next Step: Services & Capacity</h3>
+                  <div className="text-sm text-blue-700 space-y-1">
+                    <p>• <strong>Services:</strong> Define medical services your clinic provides in the next step.</p>
+                    <p>• <strong>Capacity:</strong> Set operational limits to ensure smooth clinic management.</p>
+                    <p>• <strong>Flexibility:</strong> All settings can be modified later through the clinic management dashboard.</p>
                   </div>
-                  {isServicesExpanded ? (
-                    <ChevronUpIcon className="h-5 w-5 text-gray-500" />
-                  ) : (
-                    <ChevronDownIcon className="h-5 w-5 text-gray-500" />
-                  )}
                 </div>
-              </CollapsibleTrigger>
-              
-              <CollapsibleContent>
-                <CardContent className="px-6 pb-6 pt-0 space-y-4">
-
-                  {/* Services Management */}
-                  <FormField
-                    control={form.control}
-                    name="services"
-                    render={({ field }) => {
-                      const { fields: serviceFields, append: appendService, remove: removeService } = useFieldArray({
-                        control: form.control,
-                        name: 'services'
-                      });
-
-                      return (
-                        <FormItem>
-                          <FormLabel className="text-base font-medium">
-                            Medical Services
-                          </FormLabel>
-                          
-                          <div className="space-y-4">
-                            {serviceFields.length === 0 ? (
-                              <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
-                                <StethoscopeIcon className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                                <p className="text-sm text-muted-foreground mb-2">No services added yet</p>
-                                <p className="text-xs text-gray-500 mb-4">
-                                  Add medical services your clinic will offer to patients
-                                </p>
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => appendService({ name: '', description: '', durationMinutes: 30, price: 0 })}
-                                  disabled={isLoading}
-                                >
-                                  <PlusIcon className="h-4 w-4 mr-2" />
-                                  Add First Service
-                                </Button>
-                              </div>
-                            ) : (
-                              <div className="space-y-3">
-                                {serviceFields.map((service, index) => (
-                                  <div key={service.id} className="p-4 border rounded-lg bg-gray-50">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
-                                      <FormField
-                                        control={form.control}
-                                        name={`services.${index}.name`}
-                                        render={({ field }) => (
-                                          <FormItem>
-                                            <FormLabel className="text-sm">Service Name *</FormLabel>
-                                            <FormControl>
-                                              <Input
-                                                {...field}
-                                                placeholder="e.g., General Consultation"
-                                                className="h-10"
-                                                disabled={isLoading}
-                                              />
-                                            </FormControl>
-                                            <FormMessage />
-                                          </FormItem>
-                                        )}
-                                      />
-                                      
-                                      <FormField
-                                        control={form.control}
-                                        name={`services.${index}.description`}
-                                        render={({ field }) => (
-                                          <FormItem>
-                                            <FormLabel className="text-sm">Description</FormLabel>
-                                            <FormControl>
-                                              <Input
-                                                {...field}
-                                                placeholder="Brief description of the service"
-                                                className="h-10"
-                                                disabled={isLoading}
-                                              />
-                                            </FormControl>
-                                            <FormMessage />
-                                          </FormItem>
-                                        )}
-                                      />
-                                    </div>
-                                    
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                                      <FormField
-                                        control={form.control}
-                                        name={`services.${index}.durationMinutes`}
-                                        render={({ field }) => (
-                                          <FormItem>
-                                            <FormLabel className="text-sm">Duration (minutes)</FormLabel>
-                                            <FormControl>
-                                              <Input
-                                                type="number"
-                                                min="5"
-                                                max="480"
-                                                placeholder="30"
-                                                className="h-10"
-                                                disabled={isLoading}
-                                                {...field}
-                                                value={field.value || ''}
-                                                onChange={(e) => {
-                                                  const value = e.target.value;
-                                                  field.onChange(value ? parseInt(value) : undefined);
-                                                }}
-                                              />
-                                            </FormControl>
-                                            <FormMessage />
-                                          </FormItem>
-                                        )}
-                                      />
-                                      
-                                      <FormField
-                                        control={form.control}
-                                        name={`services.${index}.price`}
-                                        render={({ field }) => (
-                                          <FormItem>
-                                            <FormLabel className="text-sm">Price (SAR)</FormLabel>
-                                            <FormControl>
-                                              <Input
-                                                type="number"
-                                                min="0"
-                                                step="0.01"
-                                                placeholder="100.00"
-                                                className="h-10"
-                                                disabled={isLoading}
-                                                {...field}
-                                                value={field.value || ''}
-                                                onChange={(e) => {
-                                                  const value = e.target.value;
-                                                  field.onChange(value ? parseFloat(value) : undefined);
-                                                }}
-                                              />
-                                            </FormControl>
-                                            <FormMessage />
-                                          </FormItem>
-                                        )}
-                                      />
-                                      
-                                      <div className="flex items-end">
-                                        <Button
-                                          type="button"
-                                          variant="outline"
-                                          size="sm"
-                                          onClick={() => removeService(index)}
-                                          disabled={isLoading}
-                                          className="h-10 w-full"
-                                        >
-                                          <TrashIcon className="h-4 w-4 mr-2" />
-                                          Remove
-                                        </Button>
-                                      </div>
-                                    </div>
-                                  </div>
-                                ))}
-                                
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  onClick={() => appendService({ name: '', description: '', durationMinutes: 30, price: 0 })}
-                                  disabled={isLoading}
-                                  className="w-full h-12 border-dashed"
-                                >
-                                  <PlusIcon className="h-4 w-4 mr-2" />
-                                  Add Another Service
-                                </Button>
-                              </div>
-                            )}
-                          </div>
-                          
-                          <div className="text-sm text-gray-600 mt-2">
-                            Add the medical services your clinic will offer. You can modify these later.
-                          </div>
-                          <FormMessage />
-                        </FormItem>
-                      );
-                    }}
-                  />
-
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-4 mt-4">
-                    <div className="flex items-start gap-3">
-                      <StethoscopeIcon className="h-5 w-5 text-green-600 mt-0.5" />
-                      <div>
-                        <h3 className="font-medium text-green-900 mb-1">Capacity Settings</h3>
-                        <p className="text-sm text-green-700">
-                          Clinic capacity settings (maximum staff, doctors, patients, and session duration) 
-                          are automatically set to default values and can be adjusted later in the system settings.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                </CardContent>
-              </CollapsibleContent>
-            </Collapsible>
+              </div>
+            </CardContent>
           </Card>
 
           {/* Navigation Buttons */}
@@ -1068,7 +904,8 @@ export const ClinicOverviewForm: React.FC<ClinicOverviewFormProps> = ({
               {process.env.NODE_ENV === 'development' && (
                 <div className="text-xs text-gray-500 mr-2">
                   Dirty: {form.formState.isDirty ? '✅' : '❌'} | 
-                  Checking: {clinicNameValidation.isChecking ? '⏳' : '✅'} |
+                  Name: {clinicNameValidation.isChecking ? '⏳' : '✅'} |
+                  License: {licenseValidation.isChecking ? '⏳' : '✅'} |
                   Errors: {Object.keys(form.formState.errors).length}
                   {Object.keys(form.formState.errors).length > 0 && (
                     <div className="text-red-500 text-xs">
@@ -1079,7 +916,14 @@ export const ClinicOverviewForm: React.FC<ClinicOverviewFormProps> = ({
               )}
               <Button
                 type="submit"
-                disabled={isLoading || clinicNameValidation.isChecking || !form.formState.isDirty || Object.keys(form.formState.errors).length > 0}
+                disabled={
+                  isLoading || 
+                  clinicNameValidation.isChecking || 
+                  licenseValidation.isChecking ||
+                  !form.formState.isDirty || 
+                  Object.keys(form.formState.errors).length > 0 ||
+                  (currentLicense.trim().length > 0 && licenseValidation.hasChecked && !licenseValidation.isAvailable)
+                }
                 className="flex items-center gap-2 min-w-[120px]"
               >
                 {isLoading ? (

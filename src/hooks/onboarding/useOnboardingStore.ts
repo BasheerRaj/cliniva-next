@@ -18,14 +18,14 @@ const PLAN_STEP_CONFIGS = {
     steps: [
       { id: 1, name: 'company', subSteps: ['overview', 'contact', 'legal'] },
       { id: 2, name: 'complex', subSteps: ['overview', 'contact', 'schedule'] },
-      { id: 3, name: 'clinic', subSteps: ['overview', 'contact', 'schedule'] }
+      { id: 3, name: 'clinic', subSteps: ['overview', 'contact', 'services', 'schedule'] }
     ]
   },
   complex: {
     totalSteps: 2,
     steps: [
       { id: 1, name: 'complex', subSteps: ['overview', 'contact', 'legal', 'schedule'] },
-      { id: 2, name: 'clinic', subSteps: ['overview', 'contact', 'schedule'] }
+      { id: 2, name: 'clinic', subSteps: ['overview', 'contact', 'services', 'schedule'] }
     ]
   },
   clinic: {

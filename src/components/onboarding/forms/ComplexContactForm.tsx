@@ -86,7 +86,7 @@ export const ComplexContactForm: React.FC<ComplexContactFormProps> = ({
   const [isAddressExpanded, setIsAddressExpanded] = useState(false);
   const [isEmergencyExpanded, setIsEmergencyExpanded] = useState(false);
   const [isSocialExpanded, setIsSocialExpanded] = useState(false);
-  const [useInheritance, setUseInheritance] = useState(false);
+  const [useInheritance, setUseInheritance] = useState(Boolean(organizationData));
 
   // Apply data inheritance from organization if available and requested
   const getInheritedContactValue = (field: string, currentValue?: any) => {
@@ -95,24 +95,24 @@ export const ComplexContactForm: React.FC<ComplexContactFormProps> = ({
     // Handle nested objects
     if (field.includes('.')) {
       const [parentField, childField] = field.split('.');
-      return organizationData[parentField]?.[childField];
+      return organizationData.contact?.[parentField]?.[childField];
     }
     
-    return organizationData[field];
+    return organizationData.contact?.[field];
   };
 
   const form = useForm<ComplexContactFormData>({
     resolver: zodResolver(complexContactSchema),
     defaultValues: {
-      phoneNumbers: initialData.phoneNumbers || [{ number: '', type: 'primary' }],
-      email: initialData.email || '',
+      phoneNumbers: initialData.phoneNumbers || (organizationData?.contact?.phoneNumbers?.length ? organizationData.contact.phoneNumbers : [{ number: '', type: 'primary' }]),
+      email: initialData.email || getInheritedContactValue('email') || '',
       address: initialData.address || {
-        street: '',
-        city: '',
-        state: '',
-        postalCode: '',
-        country: '',
-        googleLocation: ''
+        street: getInheritedContactValue('address.street') || '',
+        city: getInheritedContactValue('address.city') || '',
+        state: getInheritedContactValue('address.state') || '',
+        postalCode: getInheritedContactValue('address.postalCode') || '',
+        country: getInheritedContactValue('address.country') || '',
+        googleLocation: getInheritedContactValue('address.googleLocation') || ''
       },
       emergencyContact: initialData.emergencyContact || {
         name: '',
@@ -120,13 +120,13 @@ export const ComplexContactForm: React.FC<ComplexContactFormProps> = ({
         email: '',
         relationship: ''
       },
-      socialMediaLinks: initialData.socialMediaLinks || {
-        facebook: '',
-        instagram: '',
-        twitter: '',
-        linkedin: '',
-        whatsapp: '',
-        youtube: ''
+      socialMediaLinks: {
+        facebook: initialData.socialMediaLinks?.facebook || getInheritedContactValue('socialMediaLinks.facebook') || '',
+        instagram: initialData.socialMediaLinks?.instagram || getInheritedContactValue('socialMediaLinks.instagram') || '',
+        twitter: initialData.socialMediaLinks?.twitter || getInheritedContactValue('socialMediaLinks.twitter') || '',
+        linkedin: initialData.socialMediaLinks?.linkedin || getInheritedContactValue('socialMediaLinks.linkedin') || '',
+        whatsapp: initialData.socialMediaLinks?.whatsapp || getInheritedContactValue('socialMediaLinks.whatsapp') || '',
+        youtube: initialData.socialMediaLinks?.youtube || getInheritedContactValue('socialMediaLinks.youtube') || ''
       }
     }
   });
@@ -164,29 +164,29 @@ export const ComplexContactForm: React.FC<ComplexContactFormProps> = ({
       form.reset({
         phoneNumbers: currentValues.phoneNumbers?.length ? 
           currentValues.phoneNumbers : 
-          organizationData.phoneNumbers || [{ number: '', type: 'primary' }],
-        email: currentValues.email || organizationData.email || '',
+          organizationData.contact?.phoneNumbers || [{ number: '', type: 'primary' }],
+        email: currentValues.email || organizationData.contact?.email || '',
         address: {
-          street: currentValues.address?.street || organizationData.address?.street || '',
-          city: currentValues.address?.city || organizationData.address?.city || '',
-          state: currentValues.address?.state || organizationData.address?.state || '',
-          postalCode: currentValues.address?.postalCode || organizationData.address?.postalCode || '',
-          country: currentValues.address?.country || organizationData.address?.country || '',
-          googleLocation: currentValues.address?.googleLocation || organizationData.address?.googleLocation || ''
+          street: currentValues.address?.street || organizationData.contact?.address?.street || '',
+          city: currentValues.address?.city || organizationData.contact?.address?.city || '',
+          state: currentValues.address?.state || organizationData.contact?.address?.state || '',
+          postalCode: currentValues.address?.postalCode || organizationData.contact?.address?.postalCode || '',
+          country: currentValues.address?.country || organizationData.contact?.address?.country || '',
+          googleLocation: currentValues.address?.googleLocation || organizationData.contact?.address?.googleLocation || ''
         },
         emergencyContact: {
-          name: currentValues.emergencyContact?.name || organizationData.emergencyContact?.name || '',
-          phone: currentValues.emergencyContact?.phone || organizationData.emergencyContact?.phone || '',
-          email: currentValues.emergencyContact?.email || organizationData.emergencyContact?.email || '',
-          relationship: currentValues.emergencyContact?.relationship || organizationData.emergencyContact?.relationship || ''
+          name: currentValues.emergencyContact?.name || organizationData.contact?.emergencyContact?.name || '',
+          phone: currentValues.emergencyContact?.phone || organizationData.contact?.emergencyContact?.phone || '',
+          email: currentValues.emergencyContact?.email || organizationData.contact?.emergencyContact?.email || '',
+          relationship: currentValues.emergencyContact?.relationship || organizationData.contact?.emergencyContact?.relationship || ''
         },
         socialMediaLinks: {
-          facebook: currentValues.socialMediaLinks?.facebook || organizationData.socialMediaLinks?.facebook || '',
-          instagram: currentValues.socialMediaLinks?.instagram || organizationData.socialMediaLinks?.instagram || '',
-          twitter: currentValues.socialMediaLinks?.twitter || organizationData.socialMediaLinks?.twitter || '',
-          linkedin: currentValues.socialMediaLinks?.linkedin || organizationData.socialMediaLinks?.linkedin || '',
-          whatsapp: currentValues.socialMediaLinks?.whatsapp || organizationData.socialMediaLinks?.whatsapp || '',
-          youtube: currentValues.socialMediaLinks?.youtube || organizationData.socialMediaLinks?.youtube || ''
+          facebook: currentValues.socialMediaLinks?.facebook || organizationData.contact?.socialMediaLinks?.facebook || '',
+          instagram: currentValues.socialMediaLinks?.instagram || organizationData.contact?.socialMediaLinks?.instagram || '',
+          twitter: currentValues.socialMediaLinks?.twitter || organizationData.contact?.socialMediaLinks?.twitter || '',
+          linkedin: currentValues.socialMediaLinks?.linkedin || organizationData.contact?.socialMediaLinks?.linkedin || '',
+          whatsapp: currentValues.socialMediaLinks?.whatsapp || organizationData.contact?.socialMediaLinks?.whatsapp || '',
+          youtube: currentValues.socialMediaLinks?.youtube || organizationData.contact?.socialMediaLinks?.youtube || ''
         }
       });
       
@@ -274,7 +274,7 @@ export const ComplexContactForm: React.FC<ComplexContactFormProps> = ({
                 <div>
                   <h3 className="font-medium text-blue-900">Inherit from Organization</h3>
                   <p className="text-sm text-blue-700">
-                    Copy contact information from "{organizationData.name}"
+                    Copy contact information from "{organizationData.overview?.name || 'Organization'}"
                   </p>
                 </div>
               </div>

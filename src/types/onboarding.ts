@@ -254,7 +254,7 @@ export interface ClinicDto {
   specialization?: string;
   pin?: string;
   complexDepartmentId?: string;
-  serviceIds?: string[];
+  // Services managed through ClinicService junction table
   capacity?: CapacityDto;
   businessProfile?: BusinessProfileDto;
   legalInfo?: LegalInfoDto;

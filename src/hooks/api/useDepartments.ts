@@ -31,8 +31,19 @@ export const useDepartmentsByComplex = (complexId?: string) => {
   return useQuery({
     queryKey: ['departments', 'complex', complexId],
     queryFn: async (): Promise<Department[]> => {
-      if (!complexId) return [];
+      if (!complexId) {
+        console.log('🏥 useDepartmentsByComplex: No complexId provided, returning empty array');
+        return [];
+      }
+      
+      console.log('🏥 useDepartmentsByComplex: Fetching departments for complexId:', complexId);
       const response = await apiClient.get(`/departments/complexes/${complexId}`);
+      console.log('🏥 useDepartmentsByComplex: Response received:', {
+        complexId,
+        departmentCount: response.data?.length || 0,
+        departments: response.data
+      });
+      
       return response.data;
     },
     enabled: !!complexId,

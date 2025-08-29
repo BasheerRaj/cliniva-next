@@ -15,31 +15,7 @@ import { toast } from 'sonner';
 import { ClinicServicesCapacityDto } from '@/types/onboarding';
 import { saveClinicServicesCapacity } from '@/api/onboardingApiClient';
 
-// Add new validation function
-const validateServiceNames = async (serviceNames: string[], complexDepartmentId?: string) => {
-  try {
-    const response = await fetch('/api/services/validate-names', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        serviceNames: serviceNames.filter(name => name.trim().length > 0),
-        complexDepartmentId
-      })
-    });
-
-    if (!response.ok) {
-      throw new Error('Validation request failed');
-    }
-
-    const result = await response.json();
-    return result;
-  } catch (error) {
-    console.error('Error validating service names:', error);
-    return { isValid: false, conflicts: [], suggestions: [], message: 'Validation failed' };
-  }
-};
+// Service name validation function removed - services don't need to be unique
 
 // Service validation schema
 const serviceSchema = z.object({
@@ -121,45 +97,8 @@ export const ClinicServicesCapacityForm: React.FC<ClinicServicesCapacityFormProp
       const existingServices = initialData?.services || [];
       const newServices = data.services?.filter(service => service.name.trim() !== '') || [];
       
-      // Enhanced validation: Check for duplicates within current form
-      const serviceNames = newServices.map(s => s.name.trim().toLowerCase());
-      const duplicatesInForm = serviceNames.filter((name, index) => serviceNames.indexOf(name) !== index);
-      
-      if (duplicatesInForm.length > 0) {
-        toast.error('Duplicate services in form', {
-          description: `You have entered duplicate service names: ${[...new Set(duplicatesInForm)].join(', ')}`
-        });
-        return;
-      }
-
-      // Check for conflicts with existing services from overview form
-      if (existingServices.length > 0 && newServices.length > 0) {
-        const existingServiceNames = existingServices.map(s => s.name.toLowerCase().trim());
-        const duplicateServices = newServices.filter(service => 
-          existingServiceNames.includes(service.name.toLowerCase().trim())
-        );
-        
-        if (duplicateServices.length > 0) {
-          toast.error('Service duplication detected', {
-            description: `Services already exist from overview form: ${duplicateServices.map(s => s.name).join(', ')}`
-          });
-          return;
-        }
-      }
-
-      // Backend validation for comprehensive service name checking
-      if (newServices.length > 0) {
-        const allServiceNames = [...existingServices.map(s => s.name), ...newServices.map(s => s.name)];
-        
-        const validation = await validateServiceNames(allServiceNames, complexDepartmentId);
-        
-        if (!validation.isValid && validation.conflicts.length > 0) {
-          toast.error('Service name conflicts detected', {
-            description: `${validation.message}. Suggested alternatives: ${validation.suggestions.slice(0, 3).join(', ')}`
-          });
-          return;
-        }
-      }
+      // Note: Service uniqueness validation removed as per requirements
+      // Services don't need to be unique across the system
       
       if (existingServices.length > 0) {
         toast.info('Services detected from overview form', {

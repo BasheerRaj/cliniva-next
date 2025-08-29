@@ -267,6 +267,32 @@ export const validationApi = {
     }
   },
 
+  // Validate medical license uniqueness
+  async validateMedicalLicense(licenseNumber: string): Promise<RealTimeValidationResponse> {
+    try {
+      if (!licenseNumber || licenseNumber.trim().length === 0) {
+        return {
+          isValid: false,
+          isAvailable: false,
+          message: 'Medical license number is required'
+        };
+      }
+
+      const response = await validationApiClient.get('/validation/license-number', {
+        params: { licenseNumber: licenseNumber.trim() }
+      });
+      
+      return response.data;
+    } catch (error: any) {
+      console.error('Medical license validation error:', error);
+      return {
+        isValid: false,
+        isAvailable: false,
+        message: error.response?.data?.message || 'Unable to validate medical license'
+      };
+    }
+  },
+
   // General onboarding validation
   async validateOnboardingData(data: any): Promise<StepValidationResponse> {
     try {

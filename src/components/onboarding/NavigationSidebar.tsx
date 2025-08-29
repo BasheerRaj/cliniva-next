@@ -54,10 +54,11 @@ const PLAN_STEP_CONFIGS = {
       title: "Clinic Details",
       items: [
         { text: "Clinic Overview", subStep: "overview" },
+        { text: "Contact Details", subStep: "contact" },
         { text: "Services & Capacity", subStep: "services" },
         { text: "Working Schedule", subStep: "schedule" },
       ],
-      dots: 3,
+      dots: 4,
     },
   ],
   complex: [
@@ -77,10 +78,11 @@ const PLAN_STEP_CONFIGS = {
       title: "Clinic Details",
       items: [
         { text: "Clinic Overview", subStep: "overview" },
+        { text: "Contact Details", subStep: "contact" },
         { text: "Services & Capacity", subStep: "services" },
         { text: "Working Schedule", subStep: "schedule" },
       ],
-      dots: 3,
+      dots: 4,
     },
   ],
   clinic: [

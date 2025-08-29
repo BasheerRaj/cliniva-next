@@ -186,7 +186,8 @@ export default function SetupPage() {
           setCurrentSubStep('overview');
         }
       } else if (currentStep === 3) {
-        if (currentSubStep === 'overview') setCurrentSubStep('services');
+        if (currentSubStep === 'overview') setCurrentSubStep('contact');
+        else if (currentSubStep === 'contact') setCurrentSubStep('services');
         else if (currentSubStep === 'services') setCurrentSubStep('schedule');
         else completeSetup();
       }
@@ -200,7 +201,8 @@ export default function SetupPage() {
           setCurrentSubStep('overview');
         }
       } else if (currentStep === 2) {
-        if (currentSubStep === 'overview') setCurrentSubStep('services');
+        if (currentSubStep === 'overview') setCurrentSubStep('contact');
+        else if (currentSubStep === 'contact') setCurrentSubStep('services');
         else if (currentSubStep === 'services') setCurrentSubStep('schedule');
         else completeSetup();
       }
@@ -228,7 +230,8 @@ export default function SetupPage() {
         if (currentSubStep === 'overview') {
           setCurrentStep(2);
           setCurrentSubStep('schedule');
-        } else if (currentSubStep === 'services') setCurrentSubStep('overview');
+        } else if (currentSubStep === 'contact') setCurrentSubStep('overview');
+        else if (currentSubStep === 'services') setCurrentSubStep('contact');
         else if (currentSubStep === 'schedule') setCurrentSubStep('services');
       }
     } else if (planType === 'complex') {
@@ -240,7 +243,8 @@ export default function SetupPage() {
         if (currentSubStep === 'overview') {
           setCurrentStep(1);
           setCurrentSubStep('schedule');
-        } else if (currentSubStep === 'services') setCurrentSubStep('overview');
+        } else if (currentSubStep === 'contact') setCurrentSubStep('overview');
+        else if (currentSubStep === 'services') setCurrentSubStep('contact');
         else if (currentSubStep === 'schedule') setCurrentSubStep('services');
       }
     } else if (planType === 'clinic') {
@@ -356,11 +360,37 @@ export default function SetupPage() {
         completeOnboardingFlow();
       } else if (planType === 'clinic') {
         // For clinic plan, the clinic is the primary entity
-        // TODO: Implement clinic creation logic similar to company
-        setPrimaryEntityCreated(true);
-        await refreshSession(); // Refresh session after clinic creation
-        toast.info('Setup completion for clinic plan is not yet implemented');
-        completeOnboardingFlow();
+        // Complete clinic setup by finalizing all form data and linking services
+        try {
+          toast.loading('Finalizing clinic setup...');
+          
+          // Import the clinic completion API
+          const { completeClinicSetup } = await import('@/api/onboardingApiClient');
+          
+          // Call completion endpoint to finalize clinic and link all services
+          const result = await completeClinicSetup();
+          
+          toast.dismiss();
+          
+          if (result.success) {
+            toast.success(result.message || 'Clinic setup completed successfully!');
+            
+            // Mark as completed and refresh session
+            setPrimaryEntityCreated(true);
+            await refreshSession();
+            
+            // Complete the onboarding flow
+            completeOnboardingFlow();
+          } else {
+            throw new Error(result.message || 'Failed to complete clinic setup');
+          }
+        } catch (error: any) {
+          console.error('Clinic setup completion error:', error);
+          toast.dismiss();
+          toast.error('Failed to complete clinic setup', {
+            description: error.message || 'Please try again or contact support'
+          });
+        }
       } else {
         // For other plan types, implement similar logic
         toast.info('Setup completion for this plan type is not yet implemented');
@@ -555,14 +585,37 @@ export default function SetupPage() {
         }
       } else if (currentStep === 3) {
         if (currentSubStep === 'overview') {
+          // Get complexId from form data - for company plan, complex is created in step 2
+          const complexId = formData['2-overview']?.entityId || formData['2-overview']?.complexId || formData['2-overview']?.id || formData['2-overview']?._id;
+          
+          // Debug logging for company plan step 3
+          console.log('🏢 Company Plan - Clinic Overview - Debug:', {
+            step: currentStep,
+            subStep: currentSubStep,
+            'formData[2-overview]': formData['2-overview'],
+            complexId,
+            entityIdExists: !!formData['2-overview']?.entityId,
+            complexIdExists: !!formData['2-overview']?.complexId
+          });
+
+          // Build parent data for inheritance from complex data
+          const parentData = {
+            ...formData['2-overview'],
+            type: 'complex',
+            id: complexId,
+            _id: complexId
+          };
+
           return (
             <ClinicOverviewForm
               onNext={handleFormSubmit}
               onPrevious={goToPreviousStep}
               initialData={initialData}
+              parentData={parentData}
               planType={planType}
               formData={formData}
               currentStep={currentStep}
+              complexId={complexId}
             />
           );
         } else if (currentSubStep === 'contact') {
@@ -578,7 +631,7 @@ export default function SetupPage() {
           );
         } else if (currentSubStep === 'services') {
           // Get complexId for company plan (from step 2 complex overview)
-          const complexId = formData['2-overview']?.id || formData['2-overview']?._id;
+          const complexId = formData['2-overview']?.entityId || formData['2-overview']?.complexId || formData['2-overview']?.id || formData['2-overview']?._id;
           
           return (
             <ClinicServicesCapacityForm
@@ -589,11 +642,19 @@ export default function SetupPage() {
             />
           );
         } else if (currentSubStep === 'legal') {
+          // Build parent data for inheritance from complex data
+          const parentData = {
+            ...formData['2-overview'],
+            ...formData['2-legal'],
+            type: 'complex'
+          };
+
           return (
             <ClinicLegalForm
               onNext={handleFormSubmit}
               onPrevious={goToPreviousStep}
               initialData={initialData}
+              parentData={parentData}
               planType={planType}
               formData={formData}
               currentStep={currentStep}
@@ -651,7 +712,17 @@ export default function SetupPage() {
         // Clinic forms for complex plan
         if (currentSubStep === 'overview') {
           // Get complexId from form data - for complex plan, complex is created in step 1
-          const complexId = formData['1-overview']?.id || formData['1-overview']?._id;
+          const complexId = formData['1-overview']?.entityId || formData['1-overview']?.complexId || formData['1-overview']?.id || formData['1-overview']?._id;
+          
+          // Debug logging for complex plan step 2
+          console.log('🏗️ Complex Plan - Clinic Overview - Debug:', {
+            step: currentStep,
+            subStep: currentSubStep,
+            'formData[1-overview]': formData['1-overview'],
+            complexId,
+            entityIdExists: !!formData['1-overview']?.entityId,
+            complexIdExists: !!formData['1-overview']?.complexId
+          });
 
           // Build parent data for inheritance from complex data
           const parentData = {
@@ -686,7 +757,7 @@ export default function SetupPage() {
           );
         } else if (currentSubStep === 'services') {
           // Get complexId for complex plan (from step 1 complex overview) 
-          const complexId = formData['1-overview']?.id || formData['1-overview']?._id;
+          const complexId = formData['1-overview']?.entityId || formData['1-overview']?.complexId || formData['1-overview']?.id || formData['1-overview']?._id;
           
           return (
             <ClinicServicesCapacityForm

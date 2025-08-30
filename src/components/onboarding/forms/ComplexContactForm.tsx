@@ -11,11 +11,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ChevronLeftIcon, ChevronRightIcon, ChevronDownIcon, ChevronUpIcon, PlusIcon, TrashIcon, PhoneIcon, MapPinIcon, UserIcon, GlobeIcon, BuildingIcon } from "lucide-react";
+import { ChevronLeft, ChevronRight, PlusIcon, TrashIcon, PhoneIcon, MapPinIcon, UserIcon, GlobeIcon, Building, Mail, Home, Hash, Facebook, Instagram, Twitter, Linkedin, Youtube, MessageCircle } from "lucide-react";
 import { toast } from 'sonner';
 import { ComplexContactDto, PhoneNumberDto, AddressDto, EmergencyContactDto, SocialMediaLinksDto } from '@/types/onboarding';
 import { saveComplexContact } from '@/api/onboardingApiClient';
-import { useUniqueValidation, getValidationStatusClass, getValidationMessage } from '@/hooks/useUniqueValidation';
+import { useUniqueValidation } from '@/hooks/useUniqueValidation';
+import { FormFieldWithIcon } from '@/components/ui/form-field-with-icon';
+import { CollapsibleCard } from '@/components/ui/collapsible-card';
+import { ValidationMessage } from '@/components/ui/validation-message';
 
 // Phone number validation schema
 const phoneNumberSchema = z.object({
@@ -86,7 +89,8 @@ export const ComplexContactForm: React.FC<ComplexContactFormProps> = ({
   const [isAddressExpanded, setIsAddressExpanded] = useState(false);
   const [isEmergencyExpanded, setIsEmergencyExpanded] = useState(false);
   const [isSocialExpanded, setIsSocialExpanded] = useState(false);
-  const [useInheritance, setUseInheritance] = useState(Boolean(organizationData));
+  const [useInheritance] = useState(true); // Always inherit from organization data
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Apply data inheritance from organization if available and requested
   const getInheritedContactValue = (field: string, currentValue?: any) => {
@@ -152,54 +156,42 @@ export const ComplexContactForm: React.FC<ComplexContactFormProps> = ({
     isEditingExistingEmail // Skip validation if editing existing email
   );
 
-  const handleInheritanceToggle = () => {
-    const newUseInheritance = !useInheritance;
-    setUseInheritance(newUseInheritance);
-    
-    if (newUseInheritance && organizationData) {
-      // Apply inheritance by updating form values
-      const currentValues = form.getValues();
-      
-      // Inherit contact information
-      form.reset({
-        phoneNumbers: currentValues.phoneNumbers?.length ? 
-          currentValues.phoneNumbers : 
-          organizationData.contact?.phoneNumbers || [{ number: '', type: 'primary' }],
-        email: currentValues.email || organizationData.contact?.email || '',
-        address: {
-          street: currentValues.address?.street || organizationData.contact?.address?.street || '',
-          city: currentValues.address?.city || organizationData.contact?.address?.city || '',
-          state: currentValues.address?.state || organizationData.contact?.address?.state || '',
-          postalCode: currentValues.address?.postalCode || organizationData.contact?.address?.postalCode || '',
-          country: currentValues.address?.country || organizationData.contact?.address?.country || '',
-          googleLocation: currentValues.address?.googleLocation || organizationData.contact?.address?.googleLocation || ''
-        },
-        emergencyContact: {
-          name: currentValues.emergencyContact?.name || organizationData.contact?.emergencyContact?.name || '',
-          phone: currentValues.emergencyContact?.phone || organizationData.contact?.emergencyContact?.phone || '',
-          email: currentValues.emergencyContact?.email || organizationData.contact?.emergencyContact?.email || '',
-          relationship: currentValues.emergencyContact?.relationship || organizationData.contact?.emergencyContact?.relationship || ''
-        },
-        socialMediaLinks: {
-          facebook: currentValues.socialMediaLinks?.facebook || organizationData.contact?.socialMediaLinks?.facebook || '',
-          instagram: currentValues.socialMediaLinks?.instagram || organizationData.contact?.socialMediaLinks?.instagram || '',
-          twitter: currentValues.socialMediaLinks?.twitter || organizationData.contact?.socialMediaLinks?.twitter || '',
-          linkedin: currentValues.socialMediaLinks?.linkedin || organizationData.contact?.socialMediaLinks?.linkedin || '',
-          whatsapp: currentValues.socialMediaLinks?.whatsapp || organizationData.contact?.socialMediaLinks?.whatsapp || '',
-          youtube: currentValues.socialMediaLinks?.youtube || organizationData.contact?.socialMediaLinks?.youtube || ''
-        }
-      });
-      
-      toast.success('Inherited contact data from organization');
-    }
-  };
+
 
   const addPhoneNumber = () => {
     appendPhone({ number: '', type: 'secondary', label: '' });
   };
 
   const onSubmit = async (data: ComplexContactFormData) => {
+    if (isSubmitting) return;
+
     try {
+      setIsSubmitting(true);
+
+      // Validate and clean the data
+      const cleanedData = Object.fromEntries(
+        Object.entries(data).filter(([_, value]) => {
+          if (typeof value === 'string') {
+            return value.trim() !== '';
+          }
+          return value !== undefined && value !== null;
+        })
+      ) as ComplexContactFormData;
+
+      // Check unique validation before submitting
+      if (emailValidation.hasChecked && (!emailValidation.isValid || !emailValidation.isAvailable)) {
+        toast.error('Please fix the email issue before continuing');
+        setIsSubmitting(false);
+        return;
+      }
+
+      // If validation is still in progress, wait for it
+      if (emailValidation.isChecking) {
+        toast.info('Please wait for email validation to complete');
+        setIsSubmitting(false);
+        return;
+      }
+
       // Transform form data to ComplexContactDto
       const contactData: ComplexContactDto = {
         phoneNumbers: data.phoneNumbers?.filter(phone => phone.number.trim() !== ''),
@@ -244,78 +236,43 @@ export const ComplexContactForm: React.FC<ComplexContactFormProps> = ({
       } else {
         toast.error(error.message || 'Failed to save complex contact information');
       }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <div className="mb-8">
-        <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
-          <span>Complex Setup</span>
-          <ChevronRightIcon className="h-4 w-4" />
-          <span className="text-primary font-medium">Contact Information</span>
+    <div className="min-h-screen flex bg-background">
+      {/* Sidebar would go here if needed */}
+      <div className="flex-1 p-8 bg-background">
+        {/* Header */}
+        <div className="mb-8">
+          <button
+            className="flex items-center gap-2 text-sm mb-4 text-muted-foreground hover:text-primary transition-colors font-lato"
+            onClick={onPrevious}
+            type="button"
+          >
+            <ChevronLeft className="w-4 h-4" />
+            Back to Previous Step
+          </button>
+          <h1 className="text-2xl font-bold mb-2 text-primary font-lato">
+            Complex Contact Information
+          </h1>
+          <p className="text-muted-foreground font-lato">
+            Provide contact details for your medical complex
+          </p>
         </div>
-        
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          Complex Contact Information
-        </h1>
-        <p className="text-gray-600">
-          Provide contact details for your medical complex
-        </p>
-      </div>
 
-      {/* Data Inheritance Option */}
-      {organizationData && (
-        <Card className="mb-6 border-blue-200 bg-blue-50">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <BuildingIcon className="h-5 w-5 text-blue-600" />
-                <div>
-                  <h3 className="font-medium text-blue-900">Inherit from Organization</h3>
-                  <p className="text-sm text-blue-700">
-                    Copy contact information from "{organizationData.overview?.name || 'Organization'}"
-                  </p>
-                </div>
-              </div>
-              <Button
-                type="button"
-                variant={useInheritance ? "default" : "outline"}
-                size="sm"
-                onClick={handleInheritanceToggle}
-              >
-                {useInheritance ? 'Using Inherited Data' : 'Use Organization Data'}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          
-          {/* Basic Contact Information */}
-          <Card>
-            <Collapsible open={isContactExpanded} onOpenChange={setIsContactExpanded}>
-              <CollapsibleTrigger asChild>
-                <div className="flex items-center justify-between p-6 cursor-pointer hover:bg-gray-50">
-                  <div className="flex items-center gap-3">
-                    <PhoneIcon className="h-5 w-5 text-primary" />
-                    <div>
-                      <h2 className="text-xl font-semibold text-gray-900">Basic Contact</h2>
-                      <p className="text-sm text-gray-600">Phone numbers and email</p>
-                    </div>
-                  </div>
-                  {isContactExpanded ? (
-                    <ChevronUpIcon className="h-5 w-5 text-gray-500" />
-                  ) : (
-                    <ChevronDownIcon className="h-5 w-5 text-gray-500" />
-                  )}
-                </div>
-              </CollapsibleTrigger>
-              
-              <CollapsibleContent>
-                <CardContent className="px-6 pb-6 pt-0 space-y-4">
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="w-full space-y-8">
+            
+            {/* Basic Contact Information */}
+            <CollapsibleCard
+              title="Basic Contact"
+              isOpen={isContactExpanded}
+              onToggle={() => setIsContactExpanded(!isContactExpanded)}
+            >
+              <div className="space-y-6">
                   
                   {/* Phone Numbers */}
                   <div className="space-y-3">
@@ -416,493 +373,280 @@ export const ComplexContactForm: React.FC<ComplexContactFormProps> = ({
                   </div>
 
                   {/* Email */}
-                  <FormField
-                    control={form.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-base font-medium">Email Address</FormLabel>
-                        <FormControl>
-                          <Input
-                            {...field}
-                            type="email"
-                            placeholder="complex@example.com"
-                            className="h-12"
-                            disabled={isLoading || emailValidation.isChecking}
-                          />
-                        </FormControl>
-                        {useInheritance && organizationData?.email && (
-                          <div className="text-xs text-blue-600">
-                            Inherited: {organizationData.email}
-                          </div>
-                        )}
-                        {emailValidation.isChecking && (
-                          <p className="text-sm text-blue-600">Validating email...</p>
-                        )}
-                        {emailValidation.hasChecked && !emailValidation.isAvailable && (
-                          <p className="text-sm text-red-600">{emailValidation.message}</p>
-                        )}
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                </CardContent>
-              </CollapsibleContent>
-            </Collapsible>
-          </Card>
-
-          {/* Address Information */}
-          <Card>
-            <Collapsible open={isAddressExpanded} onOpenChange={setIsAddressExpanded}>
-              <CollapsibleTrigger asChild>
-                <div className="flex items-center justify-between p-6 cursor-pointer hover:bg-gray-50">
-                  <div className="flex items-center gap-3">
-                    <MapPinIcon className="h-5 w-5 text-primary" />
-                    <div>
-                      <h2 className="text-xl font-semibold text-gray-900">Address</h2>
-                      <p className="text-sm text-gray-600">Physical location details</p>
-                    </div>
+                  <div className="space-y-2">
+                    <label className="block text-sm font-bold text-primary font-lato">
+                      Email Address
+                    </label>
+                    <FormField
+                      control={form.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <div className="relative">
+                              <div className="absolute left-4 top-1/2 -translate-y-1/2 z-10">
+                                <Mail className="h-[18px] w-[18px] text-primary" strokeWidth={1.5} />
+                              </div>
+                              <Input
+                                {...field}
+                                type="email"
+                                placeholder="complex@example.com"
+                                className="h-[48px] pl-12 pr-4 text-base font-lato border-border bg-background text-foreground focus-visible:ring-ring focus-visible:border-ring shadow-sm placeholder:text-muted-foreground"
+                                style={{
+                                  boxShadow: '0px 0px 1px 1px rgba(21, 197, 206, 0.16)',
+                                  borderRadius: '8px'
+                                }}
+                                disabled={isSubmitting || emailValidation.isChecking}
+                              />
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                          <ValidationMessage validation={emailValidation} />
+                        </FormItem>
+                      )}
+                    />
                   </div>
-                  {isAddressExpanded ? (
-                    <ChevronUpIcon className="h-5 w-5 text-gray-500" />
-                  ) : (
-                    <ChevronDownIcon className="h-5 w-5 text-gray-500" />
-                  )}
-                </div>
-              </CollapsibleTrigger>
-              
-              <CollapsibleContent>
-                <CardContent className="px-6 pb-6 pt-0 space-y-4">
+
+              </div>
+            </CollapsibleCard>
+
+            {/* Address Information */}
+            <CollapsibleCard
+              title="Address Information"
+              isOpen={isAddressExpanded}
+              onToggle={() => setIsAddressExpanded(!isAddressExpanded)}
+            >
+              <div className="space-y-6">
                   
                   {/* Street Address */}
-                  <FormField
+                  <FormFieldWithIcon
                     control={form.control}
                     name="address.street"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Street Address</FormLabel>
-                        <FormControl>
-                          <Input
-                            {...field}
-                            placeholder="123 Medical Center Drive"
-                            className="h-12"
-                            disabled={isLoading}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
+                    label="Street Address"
+                    placeholder="123 Medical Center Drive"
+                    icon={Home}
+                    disabled={isSubmitting}
                   />
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* City */}
-                    <FormField
+                    <FormFieldWithIcon
                       control={form.control}
                       name="address.city"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>City</FormLabel>
-                          <FormControl>
-                            <Input
-                              {...field}
-                              placeholder="City name"
-                              className="h-12"
-                              disabled={isLoading}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                      label="City"
+                      placeholder="City name"
+                      icon={MapPinIcon}
+                      disabled={isSubmitting}
                     />
 
                     {/* State */}
-                    <FormField
+                    <FormFieldWithIcon
                       control={form.control}
                       name="address.state"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>State/Province</FormLabel>
-                          <FormControl>
-                            <Input
-                              {...field}
-                              placeholder="State or Province"
-                              className="h-12"
-                              disabled={isLoading}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                      label="State/Province"
+                      placeholder="State or Province"
+                      icon={MapPinIcon}
+                      disabled={isSubmitting}
                     />
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* Postal Code */}
-                    <FormField
+                    <FormFieldWithIcon
                       control={form.control}
                       name="address.postalCode"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Postal Code</FormLabel>
-                          <FormControl>
-                            <Input
-                              {...field}
-                              placeholder="12345"
-                              className="h-12"
-                              disabled={isLoading}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                      label="Postal Code"
+                      placeholder="12345"
+                      icon={Hash}
+                      disabled={isSubmitting}
                     />
 
                     {/* Country */}
-                    <FormField
+                    <FormFieldWithIcon
                       control={form.control}
                       name="address.country"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Country</FormLabel>
-                          <FormControl>
-                            <Input
-                              {...field}
-                              placeholder="Country name"
-                              className="h-12"
-                              disabled={isLoading}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                      label="Country"
+                      placeholder="Country name"
+                      icon={GlobeIcon}
+                      disabled={isSubmitting}
                     />
                   </div>
 
                   {/* Google Location */}
-                  <FormField
+                  <FormFieldWithIcon
                     control={form.control}
                     name="address.googleLocation"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Google Maps Location</FormLabel>
-                        <FormControl>
-                          <Input
-                            {...field}
-                            placeholder="Google Maps URL or Place ID"
-                            className="h-12"
-                            disabled={isLoading}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
+                    label="Google Maps Location"
+                    placeholder="Google Maps URL or Place ID"
+                    icon={MapPinIcon}
+                    disabled={isSubmitting}
                   />
 
-                </CardContent>
-              </CollapsibleContent>
-            </Collapsible>
-          </Card>
+              </div>
+            </CollapsibleCard>
 
-          {/* Emergency Contact */}
-          <Card>
-            <Collapsible open={isEmergencyExpanded} onOpenChange={setIsEmergencyExpanded}>
-              <CollapsibleTrigger asChild>
-                <div className="flex items-center justify-between p-6 cursor-pointer hover:bg-gray-50">
-                  <div className="flex items-center gap-3">
-                    <UserIcon className="h-5 w-5 text-primary" />
-                    <div>
-                      <h2 className="text-xl font-semibold text-gray-900">Emergency Contact</h2>
-                      <p className="text-sm text-gray-600">Primary emergency contact person</p>
-                    </div>
-                  </div>
-                  {isEmergencyExpanded ? (
-                    <ChevronUpIcon className="h-5 w-5 text-gray-500" />
-                  ) : (
-                    <ChevronDownIcon className="h-5 w-5 text-gray-500" />
-                  )}
-                </div>
-              </CollapsibleTrigger>
-              
-              <CollapsibleContent>
-                <CardContent className="px-6 pb-6 pt-0 space-y-4">
+            {/* Emergency Contact */}
+            <CollapsibleCard
+              title="Emergency Contact"
+              isOpen={isEmergencyExpanded}
+              onToggle={() => setIsEmergencyExpanded(!isEmergencyExpanded)}
+            >
+              <div className="space-y-6">
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* Emergency Contact Name */}
-                    <FormField
+                    <FormFieldWithIcon
                       control={form.control}
                       name="emergencyContact.name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Contact Name</FormLabel>
-                          <FormControl>
-                            <Input
-                              {...field}
-                              placeholder="John Doe"
-                              className="h-12"
-                              disabled={isLoading}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                      label="Contact Name"
+                      placeholder="John Doe"
+                      icon={UserIcon}
+                      disabled={isSubmitting}
                     />
 
                     {/* Emergency Contact Phone */}
-                    <FormField
+                    <FormFieldWithIcon
                       control={form.control}
                       name="emergencyContact.phone"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Contact Phone</FormLabel>
-                          <FormControl>
-                            <Input
-                              {...field}
-                              placeholder="+1234567890"
-                              className="h-12"
-                              disabled={isLoading}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                      label="Contact Phone"
+                      placeholder="+1234567890"
+                      icon={PhoneIcon}
+                      disabled={isSubmitting}
                     />
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* Emergency Contact Email */}
-                    <FormField
+                    <FormFieldWithIcon
                       control={form.control}
                       name="emergencyContact.email"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Contact Email</FormLabel>
-                          <FormControl>
-                            <Input
-                              {...field}
-                              type="email"
-                              placeholder="emergency@example.com"
-                              className="h-12"
-                              disabled={isLoading}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                      label="Contact Email"
+                      placeholder="emergency@example.com"
+                      icon={Mail}
+                      type="email"
+                      disabled={isSubmitting}
                     />
 
                     {/* Relationship */}
-                    <FormField
+                    <FormFieldWithIcon
                       control={form.control}
                       name="emergencyContact.relationship"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Relationship</FormLabel>
-                          <FormControl>
-                            <Input
-                              {...field}
-                              placeholder="Manager, Director, etc."
-                              className="h-12"
-                              disabled={isLoading}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                      label="Relationship"
+                      placeholder="Manager, Director, etc."
+                      icon={UserIcon}
+                      disabled={isSubmitting}
                     />
                   </div>
 
-                </CardContent>
-              </CollapsibleContent>
-            </Collapsible>
-          </Card>
+              </div>
+            </CollapsibleCard>
 
-          {/* Social Media Links */}
-          <Card>
-            <Collapsible open={isSocialExpanded} onOpenChange={setIsSocialExpanded}>
-              <CollapsibleTrigger asChild>
-                <div className="flex items-center justify-between p-6 cursor-pointer hover:bg-gray-50">
-                  <div className="flex items-center gap-3">
-                    <GlobeIcon className="h-5 w-5 text-primary" />
-                    <div>
-                      <h2 className="text-xl font-semibold text-gray-900">Social Media & Web</h2>
-                      <p className="text-sm text-gray-600">Online presence and social profiles</p>
-                    </div>
-                  </div>
-                  {isSocialExpanded ? (
-                    <ChevronUpIcon className="h-5 w-5 text-gray-500" />
-                  ) : (
-                    <ChevronDownIcon className="h-5 w-5 text-gray-500" />
-                  )}
-                </div>
-              </CollapsibleTrigger>
-              
-              <CollapsibleContent>
-                <CardContent className="px-6 pb-6 pt-0 space-y-4">
+            {/* Social Media Links */}
+            <CollapsibleCard
+              title="Social Media & Web"
+              isOpen={isSocialExpanded}
+              onToggle={() => setIsSocialExpanded(!isSocialExpanded)}
+            >
+              <div className="space-y-6">
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* Facebook */}
-                    <FormField
+                    <FormFieldWithIcon
                       control={form.control}
                       name="socialMediaLinks.facebook"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Facebook</FormLabel>
-                          <FormControl>
-                            <Input
-                              {...field}
-                              placeholder="https://facebook.com/yourcomplex"
-                              className="h-12"
-                              disabled={isLoading}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                      label="Facebook"
+                      placeholder="https://facebook.com/yourcomplex"
+                      icon={Facebook}
+                      disabled={isSubmitting}
                     />
 
                     {/* Instagram */}
-                    <FormField
+                    <FormFieldWithIcon
                       control={form.control}
                       name="socialMediaLinks.instagram"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Instagram</FormLabel>
-                          <FormControl>
-                            <Input
-                              {...field}
-                              placeholder="https://instagram.com/yourcomplex"
-                              className="h-12"
-                              disabled={isLoading}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                      label="Instagram"
+                      placeholder="https://instagram.com/yourcomplex"
+                      icon={Instagram}
+                      disabled={isSubmitting}
                     />
 
                     {/* Twitter */}
-                    <FormField
+                    <FormFieldWithIcon
                       control={form.control}
                       name="socialMediaLinks.twitter"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Twitter</FormLabel>
-                          <FormControl>
-                            <Input
-                              {...field}
-                              placeholder="https://twitter.com/yourcomplex"
-                              className="h-12"
-                              disabled={isLoading}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                      label="Twitter"
+                      placeholder="https://twitter.com/yourcomplex"
+                      icon={Twitter}
+                      disabled={isSubmitting}
                     />
 
                     {/* LinkedIn */}
-                    <FormField
+                    <FormFieldWithIcon
                       control={form.control}
                       name="socialMediaLinks.linkedin"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>LinkedIn</FormLabel>
-                          <FormControl>
-                            <Input
-                              {...field}
-                              placeholder="https://linkedin.com/company/yourcomplex"
-                              className="h-12"
-                              disabled={isLoading}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                      label="LinkedIn"
+                      placeholder="https://linkedin.com/company/yourcomplex"
+                      icon={Linkedin}
+                      disabled={isSubmitting}
                     />
 
                     {/* WhatsApp */}
-                    <FormField
+                    <FormFieldWithIcon
                       control={form.control}
                       name="socialMediaLinks.whatsapp"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>WhatsApp</FormLabel>
-                          <FormControl>
-                            <Input
-                              {...field}
-                              placeholder="https://wa.me/1234567890"
-                              className="h-12"
-                              disabled={isLoading}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                      label="WhatsApp"
+                      placeholder="https://wa.me/1234567890"
+                      icon={MessageCircle}
+                      disabled={isSubmitting}
                     />
 
                     {/* YouTube */}
-                    <FormField
+                    <FormFieldWithIcon
                       control={form.control}
                       name="socialMediaLinks.youtube"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>YouTube</FormLabel>
-                          <FormControl>
-                            <Input
-                              {...field}
-                              placeholder="https://youtube.com/@yourcomplex"
-                              className="h-12"
-                              disabled={isLoading}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                      label="YouTube"
+                      placeholder="https://youtube.com/@yourcomplex"
+                      icon={Youtube}
+                      disabled={isSubmitting}
                     />
                   </div>
 
-                </CardContent>
-              </CollapsibleContent>
-            </Collapsible>
-          </Card>
+              </div>
+            </CollapsibleCard>
 
-          {/* Navigation Buttons */}
-          <div className="flex items-center justify-between pt-6">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onPrevious}
-              disabled={isLoading}
-              className="flex items-center gap-2"
-            >
-              <ChevronLeftIcon className="h-4 w-4" />
-              Previous
-            </Button>
-
-            <div className="flex items-center gap-2">
+            {/* Bottom Navigation */}
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-12">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onPrevious}
+                disabled={isSubmitting}
+                className="w-full sm:w-auto h-[48px] px-8 font-lato text-primary border-border hover:bg-muted"
+              >
+                <ChevronLeft className="w-4 h-4 mr-2" />
+                Previous
+              </Button>
               <Button
                 type="submit"
-                disabled={isLoading}
-                className="flex items-center gap-2 min-w-[120px]"
+                disabled={isSubmitting || emailValidation.isChecking || !form.formState.isValid}
+                className="w-full sm:w-auto h-[48px] px-8 bg-primary hover:bg-primary/90 text-primary-foreground font-lato disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isLoading ? (
+                {isSubmitting ? (
                   <>
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                    <div className="w-4 h-4 mr-2 border-2 border-current border-t-transparent rounded-full animate-spin" />
                     Saving...
                   </>
                 ) : (
                   <>
                     Next
-                    <ChevronRightIcon className="h-4 w-4" />
+                    <ChevronRight className="w-4 h-4 ml-2" />
                   </>
                 )}
               </Button>
             </div>
-          </div>
-
-        </form>
-      </Form>
+          </form>
+        </Form>
+      </div>
     </div>
   );
 };

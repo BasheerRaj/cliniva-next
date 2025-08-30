@@ -550,10 +550,22 @@ export interface ThemeContextType {
 // CSS variables for theme switching (adapted for Tailwind CSS v4)
 export const generateThemeCSS = (theme: Theme) => {
   const themeColors = designSystem.themes[theme];
+  
+  // Fallback if theme doesn't exist
+  if (!themeColors) {
+    console.warn(`Theme "${theme}" not found, falling back to light theme`);
+    return generateThemeCSS('light');
+  }
+  
   let cssVars = `[data-theme="${theme}"] {\n`;
   
   // Generate CSS custom properties for theme colors
   const addVars = (obj: any, prefix: string) => {
+    // Add null check to prevent runtime errors
+    if (!obj || typeof obj !== 'object') {
+      return;
+    }
+    
     Object.entries(obj).forEach(([key, value]) => {
       if (typeof value === 'object' && value !== null) {
         addVars(value, `${prefix}-${key}`);

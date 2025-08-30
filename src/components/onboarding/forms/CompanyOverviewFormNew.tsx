@@ -18,6 +18,8 @@ import { stepApi } from '@/api/validationApi';
 import { useUniqueValidation, getValidationStatusClass, getValidationMessage } from '@/hooks/useUniqueValidation';
 import { apiHelpers } from '@/lib/axios';
 import { useSession } from 'next-auth/react';
+import { FormFieldWithIcon } from '@/components/ui/form-field-with-icon';
+import { ValidationMessage } from '@/components/ui/validation-message';
 
 // Form validation schema based on backend CreateOrganizationDto
 const companyOverviewSchema = z.object({
@@ -405,73 +407,21 @@ export const CompanyOverviewFormNew: React.FC<CompanyOverviewFormProps> = ({
                           </div>
                         </FormControl>
                         <FormMessage />
-                        {/* Unique validation message */}
-                        {(() => {
-                          const { message, className } = getValidationMessage(companyNameValidation);
-                          return message ? (
-                            <div className={className}>
-                              {companyNameValidation.isChecking && (
-                                <span className="inline-flex items-center gap-1">
-                                  <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24">
-                                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" strokeDasharray="32" strokeLinecap="round"/>
-                                  </svg>
-                                  {message}
-                                </span>
-                              )}
-                              {!companyNameValidation.isChecking && (
-                                <span className="inline-flex items-center gap-1">
-                                  {companyNameValidation.isValid && companyNameValidation.isAvailable && (
-                                    <svg className="h-3 w-3 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
-                                    </svg>
-                                  )}
-                                  {(!companyNameValidation.isValid || !companyNameValidation.isAvailable) && (
-                                    <svg className="h-3 w-3 text-red-500" fill="currentColor" viewBox="0 0 20 20">
-                                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd"/>
-                                    </svg>
-                                  )}
-                                  {message}
-                                </span>
-                              )}
-                            </div>
-                          ) : null;
-                        })()}
+                        <ValidationMessage validation={companyNameValidation} />
                       </FormItem>
                     )}
                   />
                 </div>
 
                 {/* Legal Name Field */}
-                <div className="space-y-2">
-                  <label className="block text-sm font-bold text-primary font-lato">
-                    Legal Name
-                  </label>
-                  <FormField
-                    control={form.control}
-                    name="legalName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormControl>
-                          <div className="relative">
-                            <div className="absolute left-4 top-1/2 -translate-y-1/2 z-10">
-                              <FileText className="h-[18px] w-[18px] text-primary" strokeWidth={1.5} />
-                            </div>
-                            <Input
-                              {...field}
-                              placeholder="Enter Legal Name"
-                              className="h-[48px] pl-12 pr-4 text-base font-lato border-border bg-background text-foreground focus-visible:ring-ring focus-visible:border-ring shadow-sm placeholder:text-muted-foreground"
-                              style={{
-                                boxShadow: '0px 0px 1px 1px rgba(21, 197, 206, 0.16)',
-                                borderRadius: '8px'
-                              }}
-                            />
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+                <FormFieldWithIcon
+                  control={form.control}
+                  name="legalName"
+                  label="Legal Name"
+                  placeholder="Enter Legal Name"
+                  icon={FileText}
+                  disabled={isSubmitting}
+                />
               </div>
             </div>
 
@@ -537,134 +487,48 @@ export const CompanyOverviewFormNew: React.FC<CompanyOverviewFormProps> = ({
                   <>
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-6">
                       {/* Mission Field */}
-                      <div className="space-y-2">
-                        <label className="block text-sm font-bold text-primary font-lato">
-                          Mission
-                        </label>
-                        <FormField
-                          control={form.control}
-                          name="mission"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormControl>
-                                <div className="relative">
-                                  <div className="absolute left-4 top-4 z-10">
-                                    <Target className="h-[18px] w-[18px] text-primary" strokeWidth={1.5} />
-                                  </div>
-                                  <Textarea
-                                    {...field}
-                                    placeholder="Enter Mission"
-                                    className="min-h-[100px] pl-12 pr-4 pt-4 pb-4 text-base font-lato border-border bg-background text-foreground focus-visible:ring-ring focus-visible:border-ring shadow-sm placeholder:text-muted-foreground resize-none"
-                                    style={{
-                                      boxShadow: '0px 0px 1px 1px rgba(21, 197, 206, 0.16)',
-                                      borderRadius: '8px'
-                                    }}
-                                  />
-                                </div>
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
+                      <FormFieldWithIcon
+                        control={form.control}
+                        name="mission"
+                        label="Mission"
+                        placeholder="Enter Mission"
+                        icon={Target}
+                        disabled={isSubmitting}
+                        multiline={true}
+                      />
 
                       {/* Vision Field */}
-                      <div className="space-y-2">
-                        <label className="block text-sm font-bold text-primary font-lato">
-                          Vision
-                        </label>
-                        <FormField
-                          control={form.control}
-                          name="vision"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormControl>
-                                <div className="relative">
-                                  <div className="absolute left-4 top-4 z-10">
-                                    <Eye className="h-[18px] w-[18px] text-primary" strokeWidth={1.5} />
-                                  </div>
-                                  <Textarea
-                                    {...field}
-                                    placeholder="Enter Vision"
-                                    className="min-h-[100px] pl-12 pr-4 pt-4 pb-4 text-base font-lato border-border bg-background text-foreground focus-visible:ring-ring focus-visible:border-ring shadow-sm placeholder:text-muted-foreground resize-none"
-                                    style={{
-                                      boxShadow: '0px 0px 1px 1px rgba(21, 197, 206, 0.16)',
-                                      borderRadius: '8px'
-                                    }}
-                                  />
-                                </div>
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
+                      <FormFieldWithIcon
+                        control={form.control}
+                        name="vision"
+                        label="Vision"
+                        placeholder="Enter Vision"
+                        icon={Eye}
+                        disabled={isSubmitting}
+                        multiline={true}
+                      />
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                       {/* CEO Name Field */}
-                      <div className="space-y-2">
-                        <label className="block text-sm font-bold text-primary font-lato">
-                          CEO Name
-                        </label>
-                        <FormField
-                          control={form.control}
-                          name="ceoName"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormControl>
-                                <div className="relative">
-                                  <div className="absolute left-4 top-1/2 -translate-y-1/2 z-10">
-                                    <User className="h-[18px] w-[18px] text-primary" strokeWidth={1.5} />
-                                  </div>
-                                  <Input
-                                    {...field}
-                                    placeholder="Enter CEO Name"
-                                    className="h-[48px] pl-12 pr-4 text-base font-lato border-border bg-background text-foreground focus-visible:ring-ring focus-visible:border-ring shadow-sm placeholder:text-muted-foreground"
-                                    style={{
-                                      boxShadow: '0px 0px 1px 1px rgba(21, 197, 206, 0.16)',
-                                      borderRadius: '8px'
-                                    }}
-                                  />
-                                </div>
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
+                      <FormFieldWithIcon
+                        control={form.control}
+                        name="ceoName"
+                        label="CEO Name"
+                        placeholder="Enter CEO Name"
+                        icon={User}
+                        disabled={isSubmitting}
+                      />
 
                       {/* Registration Number Field */}
-                      <div className="space-y-2">
-                        <label className="block text-sm font-bold text-primary font-lato">
-                          Registration Number
-                        </label>
-                        <FormField
-                          control={form.control}
-                          name="registrationNumber"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormControl>
-                                <div className="relative">
-                                  <div className="absolute left-4 top-1/2 -translate-y-1/2 z-10">
-                                    <Hash className="h-[18px] w-[18px] text-primary" strokeWidth={1.5} />
-                                  </div>
-                                  <Input
-                                    {...field}
-                                    placeholder="Enter Registration Number"
-                                    className="h-[48px] pl-12 pr-4 text-base font-lato border-border bg-background text-foreground focus-visible:ring-ring focus-visible:border-ring shadow-sm placeholder:text-muted-foreground"
-                                    style={{
-                                      boxShadow: '0px 0px 1px 1px rgba(21, 197, 206, 0.16)',
-                                      borderRadius: '8px'
-                                    }}
-                                  />
-                                </div>
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
+                      <FormFieldWithIcon
+                        control={form.control}
+                        name="registrationNumber"
+                        label="Registration Number"
+                        placeholder="Enter Registration Number"
+                        icon={Hash}
+                        disabled={isSubmitting}
+                      />
                     </div>
                   </>
                 )}

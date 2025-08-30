@@ -1,23 +1,25 @@
 'use client';
 
-import React, { useState } from "react";
-import { useForm, useFieldArray, Controller } from 'react-hook-form';
+import React, { useState, useRef } from "react";
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { ChevronLeft, ChevronRight, Building, User, Calendar, Target, Eye, FileText, Globe, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Form, FormField, FormControl, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ChevronLeftIcon, ChevronRightIcon, ChevronDownIcon, ChevronUpIcon, BuildingIcon, PlusIcon, TrashIcon } from "lucide-react";
 import { toast } from 'sonner';
 import { fetchDepartments } from '@/api/onboardingApiClient';
 import { ComplexOverviewDto } from '@/types/onboarding';
-import { saveComplexOverview, validateComplexName } from '@/api/onboardingApiClient';
-import { LogoUpload } from '@/components/ui/logo-upload';
+import { saveComplexOverview } from '@/api/onboardingApiClient';
 import { DepartmentSearchInput, Department } from '@/components/ui/department-search-input';
-import { useUniqueValidation, getValidationStatusClass, getValidationMessage } from '@/hooks/useUniqueValidation';
+import { useUniqueValidation } from '@/hooks/useUniqueValidation';
+import { FormFieldWithIcon } from '@/components/ui/form-field-with-icon';
+import { CollapsibleCard } from '@/components/ui/collapsible-card';
+import { EnhancedLogoUpload } from '@/components/ui/enhanced-logo-upload';
+import { ValidationMessage } from '@/components/ui/validation-message';
 
 // Form validation schema matching new flattened ComplexOverviewDto
 const complexOverviewSchema = z.object({
@@ -106,8 +108,10 @@ export const ComplexOverviewForm: React.FC<ComplexOverviewFormProps> = ({
   const [isBasicInfoExpanded, setIsBasicInfoExpanded] = useState(true);
   const [isBusinessProfileExpanded, setIsBusinessProfileExpanded] = useState(false);
   const [isDepartmentsExpanded, setIsDepartmentsExpanded] = useState(false);
-  const [useInheritance, setUseInheritance] = useState(Boolean(organizationData));
+  const [useInheritance] = useState(true); // Always inherit from organization data
   const [allDepartments, setAllDepartments] = useState<Department[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Load departments on component mount
   React.useEffect(() => {
@@ -153,14 +157,44 @@ export const ComplexOverviewForm: React.FC<ComplexOverviewFormProps> = ({
     }
   });
 
+  // Logo upload handler
+  const handleFileUpload = async (file: File) => {
+    if (!file) return;
+
+    // Validate file type
+    const allowedTypes = ['image/svg+xml', 'image/png', 'image/jpeg', 'image/gif'];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error('Please upload an SVG, PNG, JPG or GIF file');
+      return;
+    }
+
+    // Validate file size (2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('File size must be less than 2MB');
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      // For now, create a blob URL for preview
+      const imageUrl = URL.createObjectURL(file);
+      form.setValue('logoUrl', imageUrl);
+      toast.success('Logo uploaded successfully');
+    } catch (error) {
+      toast.error('Failed to upload logo');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   // Real-time validation for complex name uniqueness
   const currentName = form.watch('name') || '';
   const isEditingExistingName = Boolean(
-    initialData?.name && 
-    initialData.name.trim().length > 0 && 
+    initialData?.name &&
+    initialData.name.trim().length > 0 &&
     currentName.trim().toLowerCase() === initialData.name.trim().toLowerCase()
   );
-  
+
   const complexNameValidation = useUniqueValidation(
     currentName,
     'complexName',
@@ -169,26 +203,7 @@ export const ComplexOverviewForm: React.FC<ComplexOverviewFormProps> = ({
     isEditingExistingName // Skip validation if editing existing complex name
   );
 
-  const handleInheritanceToggle = () => {
-    const newUseInheritance = !useInheritance;
-    setUseInheritance(newUseInheritance);
-    
-    if (newUseInheritance && organizationData) {
-      // Apply inheritance by updating form values
-      const currentValues = form.getValues();
-      form.reset({
-        ...currentValues,
-        logoUrl: currentValues.logoUrl || organizationData.overview?.logoUrl || '',
-        yearEstablished: currentValues.yearEstablished || organizationData.overview?.yearEstablished,
-        mission: currentValues.mission || organizationData.overview?.mission || '',
-        vision: currentValues.vision || organizationData.overview?.vision || '',
-        overview: currentValues.overview || organizationData.overview?.overview || '',
-        goals: currentValues.goals || organizationData.overview?.goals || '',
-        ceoName: currentValues.ceoName || organizationData.overview?.ceoName || ''
-      });
-      toast.success('Inherited data from organization');
-    }
-  };
+
 
   // Handle department changes
   const handleDepartmentChange = (departments: Department[]) => {
@@ -196,24 +211,59 @@ export const ComplexOverviewForm: React.FC<ComplexOverviewFormProps> = ({
   };
 
   const onSubmit = async (data: ComplexOverviewFormData) => {
+    if (isSubmitting) return;
+
     try {
+      setIsSubmitting(true);
+
+      // Validate and clean the data
+      const cleanedData = Object.fromEntries(
+        Object.entries(data).filter(([_, value]) => {
+          if (typeof value === 'string') {
+            return value.trim() !== '';
+          }
+          return value !== undefined && value !== null;
+        })
+      ) as ComplexOverviewFormData;
+
+      // Ensure required fields are present
+      if (!cleanedData.name || cleanedData.name.trim() === '') {
+        toast.error('Complex name is required');
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Check unique validation before submitting
+      if (complexNameValidation.hasChecked && (!complexNameValidation.isValid || !complexNameValidation.isAvailable)) {
+        toast.error('Please fix the complex name issue before continuing');
+        setIsSubmitting(false);
+        return;
+      }
+
+      // If validation is still in progress, wait for it
+      if (complexNameValidation.isChecking) {
+        toast.info('Please wait for name validation to complete');
+        setIsSubmitting(false);
+        return;
+      }
+
       // Separate existing departments from new ones
       const existingDepartments = data.departments.filter(dept => dept._id);
       const newDepartments = data.departments.filter(dept => !dept._id);
 
       // Transform form data to ComplexOverviewDto
       const complexData: ComplexOverviewDto = {
-        name: data.name,
-        managerName: data.managerName || undefined,
-        logoUrl: data.logoUrl || undefined,
-        website: data.website || undefined,
+        name: cleanedData.name,
+        managerName: cleanedData.managerName || undefined,
+        logoUrl: cleanedData.logoUrl || undefined,
+        website: cleanedData.website || undefined,
         // Flattened business profile fields
-        yearEstablished: data.yearEstablished,
-        mission: data.mission || undefined,
-        vision: data.vision || undefined,
-        overview: data.overview || undefined,
-        goals: data.goals || undefined,
-        ceoName: data.ceoName || undefined,
+        yearEstablished: cleanedData.yearEstablished,
+        mission: cleanedData.mission || undefined,
+        vision: cleanedData.vision || undefined,
+        overview: cleanedData.overview || undefined,
+        goals: cleanedData.goals || undefined,
+        ceoName: cleanedData.ceoName || undefined,
         // Department management - backend expects these fields
         departmentIds: existingDepartments.map(dept => dept._id!),
         newDepartmentNames: newDepartments.map(dept => dept.name)
@@ -223,11 +273,11 @@ export const ComplexOverviewForm: React.FC<ComplexOverviewFormProps> = ({
 
       // Save to backend
       const response = await saveComplexOverview(complexData);
-      
+
       if (response.success) {
         console.log('✅ Complex overview saved successfully:', response);
         toast.success('Complex overview saved successfully!');
-        
+
         // Pass the response data including entityId to the parent
         onNext({
           ...complexData,
@@ -239,7 +289,7 @@ export const ComplexOverviewForm: React.FC<ComplexOverviewFormProps> = ({
       }
     } catch (error: any) {
       console.error('❌ Error saving complex overview:', error);
-      
+
       if (error.validationError && error.errors) {
         // Handle field-specific validation errors
         error.errors.forEach((err: any) => {
@@ -252,451 +302,396 @@ export const ComplexOverviewForm: React.FC<ComplexOverviewFormProps> = ({
       } else {
         toast.error(error.message || 'Failed to save complex overview');
       }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <div className="mb-8">
-        <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
-          <span>Complex Setup</span>
-          <ChevronRightIcon className="h-4 w-4" />
-          <span className="text-primary font-medium">Overview</span>
+    <div className="min-h-screen flex bg-background">
+      {/* Sidebar would go here if needed */}
+      <div className="flex-1 p-8 bg-background">
+        {/* Header */}
+        <div className="mb-8">
+          <button
+            className="flex items-center gap-2 text-sm mb-4 text-muted-foreground hover:text-primary transition-colors font-lato"
+            onClick={onPrevious}
+            type="button"
+          >
+            <ChevronLeft className="w-4 h-4" />
+            Back to Previous Step
+          </button>
+          <h1 className="text-2xl font-bold mb-2 text-primary font-lato">
+            Complex Information
+          </h1>
+          <p className="text-muted-foreground font-lato">
+            Set up your medical complex with departments and management details
+          </p>
         </div>
-        
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          Complex Information
-        </h1>
-        <p className="text-gray-600">
-          Set up your medical complex with departments and management details
-        </p>
-      </div>
 
-      {/* Data Inheritance Option */}
-      {organizationData && (
-        <Card className="mb-6 border-blue-200 bg-blue-50">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <BuildingIcon className="h-5 w-5 text-blue-600" />
-                <div>
-                  <h3 className="font-medium text-blue-900">Inherit from Organization</h3>
-                  <p className="text-sm text-blue-700">
-                    Copy business information from "{organizationData.overview?.name || 'Organization'}"
-                  </p>
-                </div>
-              </div>
-              <Button
-                type="button"
-                variant={useInheritance ? "default" : "outline"}
-                size="sm"
-                onClick={handleInheritanceToggle}
-              >
-                {useInheritance ? 'Using Inherited Data' : 'Use Organization Data'}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          
-          {/* Basic Information Section */}
-          <Card>
-            <Collapsible open={isBasicInfoExpanded} onOpenChange={setIsBasicInfoExpanded}>
-              <CollapsibleTrigger asChild>
-                <div className="flex items-center justify-between p-6 cursor-pointer hover:bg-gray-50">
-                  <div>
-                    <h2 className="text-xl font-semibold text-gray-900">Basic Information</h2>
-                    <p className="text-sm text-gray-600">Essential complex details</p>
-                  </div>
-                  {isBasicInfoExpanded ? (
-                    <ChevronUpIcon className="h-5 w-5 text-gray-500" />
-                  ) : (
-                    <ChevronDownIcon className="h-5 w-5 text-gray-500" />
+
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="w-full space-y-8">
+            {/* Logo and Complex Name Row */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div>
+                <label className="block text-sm font-bold text-primary font-lato mb-2">
+                  Logo<span className="text-red-500 ml-1">*</span>
+                </label>
+                <FormField
+                  control={form.control}
+                  name="logoUrl"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <div
+                          className="border-2 border-dashed border-border bg-muted/30 rounded-lg p-8 text-center cursor-pointer hover:bg-muted/50 transition-colors"
+                          onClick={() => {
+                            const input = document.createElement('input');
+                            input.type = 'file';
+                            input.accept = 'image/svg+xml,image/png,image/jpeg,image/gif';
+                            input.onchange = (e) => {
+                              const file = (e.target as HTMLInputElement).files?.[0];
+                              if (file) handleFileUpload(file);
+                            };
+                            input.click();
+                          }}
+                        >
+                          {field.value ? (
+                            <div className="flex flex-col items-center">
+                              <img src={field.value} alt="Logo" className="w-12 h-12 object-contain mb-2 rounded" />
+                              <p className="text-sm text-primary">
+                                Logo uploaded successfully
+                              </p>
+                            </div>
+                          ) : (
+                            <>
+                              <Upload className="w-6 h-6 mx-auto mb-2 text-muted-foreground" />
+                              <p className="text-sm mb-1 text-primary">
+                                {isUploading ? 'Uploading...' : 'Click or Drag file to this area to upload'}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                SVG, PNG, JPG or GIF, Maximum file size 2MB.
+                              </p>
+                            </>
+                          )}
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
                   )}
-                </div>
-              </CollapsibleTrigger>
-              
-              <CollapsibleContent>
-                <CardContent className="px-6 pb-6 pt-0 space-y-4">
-                  
-                  {/* Complex Name */}
+                />
+              </div>
+
+              <div className="space-y-6">
+                {/* Complex Name Field */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-bold text-primary font-lato">
+                    Complex Name<span className="text-red-500 ml-1">*</span>
+                  </label>
                   <FormField
                     control={form.control}
                     name="name"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-base font-medium">
-                          Complex Name *
-                        </FormLabel>
                         <FormControl>
-                          <Input
-                            {...field}
-                            placeholder="Enter complex name"
-                            className="h-12"
-                            disabled={isLoading || complexNameValidation.isChecking}
-                          />
+                          <div className="relative">
+                            <div className="absolute left-4 top-1/2 -translate-y-1/2 z-10">
+                              <Building className="h-[18px] w-[18px] text-primary" strokeWidth={1.5} />
+                            </div>
+                            <Input
+                              {...field}
+                              placeholder="Enter Complex Name"
+                              className={`h-[48px] pl-12 pr-4 text-base font-lato border-border bg-background text-foreground focus-visible:ring-ring focus-visible:border-ring shadow-sm placeholder:text-muted-foreground ${complexNameValidation.hasChecked && (!complexNameValidation.isValid || !complexNameValidation.isAvailable) ? 'border-red-500' : ''}`}
+                              style={{
+                                boxShadow: '0px 0px 1px 1px rgba(21, 197, 206, 0.16)',
+                                borderRadius: '8px'
+                              }}
+                              disabled={isSubmitting}
+                            />
+                          </div>
                         </FormControl>
                         <FormMessage />
-                        {complexNameValidation.isChecking && (
-                          <p className="text-sm text-blue-600">Checking availability...</p>
-                        )}
-                        {complexNameValidation.hasChecked && !complexNameValidation.isAvailable && (
-                          <p className="text-sm text-red-600">{complexNameValidation.message}</p>
-                        )}
+                        <ValidationMessage validation={complexNameValidation} />
                       </FormItem>
                     )}
                   />
+                </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Manager Name */}
-                    <FormField
-                      control={form.control}
-                      name="managerName"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Complex Manager</FormLabel>
-                          <FormControl>
-                            <Input
-                              {...field}
-                              placeholder="Manager's full name"
-                              className="h-12"
-                              disabled={isLoading}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                {/* Manager Name Field */}
+                <FormFieldWithIcon
+                  control={form.control}
+                  name="managerName"
+                  label="Complex Manager"
+                  placeholder="Manager's full name"
+                  icon={User}
+                  disabled={isSubmitting}
+                />
 
-                    {/* Year Established */}
-                    <FormField
-                      control={form.control}
-                      name="yearEstablished"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Year Established</FormLabel>
-                          <FormControl>
+                {/* Year Established Field */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-bold text-primary font-lato">
+                    Year Established
+                  </label>
+                  <FormField
+                    control={form.control}
+                    name="yearEstablished"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <div className="relative">
+                            <div className="absolute left-4 top-1/2 -translate-y-1/2 z-10">
+                              <Calendar className="h-[18px] w-[18px] text-primary" strokeWidth={1.5} />
+                            </div>
                             <Input
                               type="number"
-                              placeholder="e.g., 2020"
-                              className="h-12"
-                              disabled={isLoading}
-                              {...field}
                               value={field.value || ''}
+                              name={field.name}
+                              onBlur={field.onBlur}
                               onChange={(e) => {
                                 const value = e.target.value;
                                 field.onChange(value ? parseInt(value) : undefined);
                               }}
+                              placeholder="Enter Year"
+                              className="h-[48px] pl-12 pr-4 text-base font-lato border-border bg-background text-foreground focus-visible:ring-ring focus-visible:border-ring shadow-sm placeholder:text-muted-foreground"
+                              style={{
+                                boxShadow: '0px 0px 1px 1px rgba(21, 197, 206, 0.16)',
+                                borderRadius: '8px'
+                              }}
+                              disabled={isSubmitting}
                             />
-                          </FormControl>
-                          {useInheritance && organizationData?.yearEstablished && (
-                            <div className="text-xs text-blue-600">
-                              Inherited: {organizationData.yearEstablished}
-                            </div>
-                          )}
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Logo Upload */}
-                    <FormField
-                      control={form.control}
-                      name="logoUrl"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Complex Logo</FormLabel>
-                          <FormControl>
-                            <LogoUpload
-                              value={field.value || ''}
-                              onChange={field.onChange}
-                              disabled={isLoading}
-                              placeholder="Upload your complex logo"
-                            />
-                          </FormControl>
-                          {useInheritance && organizationData?.logoUrl && !field.value && (
-                            <div className="text-xs text-blue-600">
-                              Inherited logo from organization
-                            </div>
-                          )}
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    {/* Website */}
-                    <FormField
-                      control={form.control}
-                      name="website"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Website</FormLabel>
-                          <FormControl>
-                            <Input
-                              {...field}
-                              placeholder="https://yourcomplex.com"
-                              className="h-12"
-                              disabled={isLoading}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  {/* CEO Name */}
-                  <FormField
-                    control={form.control}
-                    name="ceoName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>CEO/Director Name</FormLabel>
-                        <FormControl>
-                          <Input
-                            {...field}
-                            placeholder="Name of CEO or Director"
-                            className="h-12"
-                            disabled={isLoading}
-                          />
-                        </FormControl>
-                        {useInheritance && organizationData?.ceoName && (
-                          <div className="text-xs text-blue-600">
-                            Inherited: {organizationData.ceoName}
                           </div>
-                        )}
+                        </FormControl>
+
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-
-                </CardContent>
-              </CollapsibleContent>
-            </Collapsible>
-          </Card>
-
-          {/* Business Profile Section */}
-          <Card>
-            <Collapsible open={isBusinessProfileExpanded} onOpenChange={setIsBusinessProfileExpanded}>
-              <CollapsibleTrigger asChild>
-                <div className="flex items-center justify-between p-6 cursor-pointer hover:bg-gray-50">
-                  <div>
-                    <h2 className="text-xl font-semibold text-gray-900">Business Profile</h2>
-                    <p className="text-sm text-gray-600">Mission, vision, and complex description</p>
-                  </div>
-                  {isBusinessProfileExpanded ? (
-                    <ChevronUpIcon className="h-5 w-5 text-gray-500" />
-                  ) : (
-                    <ChevronDownIcon className="h-5 w-5 text-gray-500" />
-                  )}
                 </div>
-              </CollapsibleTrigger>
-              
-              <CollapsibleContent>
-                <CardContent className="px-6 pb-6 pt-0 space-y-4">
+              </div>
+            </div>
 
-                  {/* Complex Overview */}
-                  <FormField
-                    control={form.control}
-                    name="overview"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Complex Overview</FormLabel>
-                        <FormControl>
-                          <Textarea
-                            {...field}
-                            placeholder="Describe your complex's services and specialties..."
-                            className="min-h-[120px] resize-none"
-                            disabled={isLoading}
-                          />
-                        </FormControl>
-                        <div className="text-xs text-gray-500">
-                          {field.value?.length || 0}/1000 characters
-                        </div>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+            {/* Website Field */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <FormFieldWithIcon
+                control={form.control}
+                name="website"
+                label="Website"
+                placeholder="https://yourcomplex.com"
+                icon={Globe}
+                disabled={isSubmitting}
+              />
 
-                  {/* Complex Goals */}
-                  <FormField
-                    control={form.control}
-                    name="goals"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Complex Goals</FormLabel>
-                        <FormControl>
-                          <Textarea
-                            {...field}
-                            placeholder="What are your complex's main goals and objectives?"
-                            className="min-h-[120px] resize-none"
-                            disabled={isLoading}
-                          />
-                        </FormControl>
-                        <div className="text-xs text-gray-500">
-                          {field.value?.length || 0}/1000 characters
-                        </div>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+              <FormFieldWithIcon
+                control={form.control}
+                name="ceoName"
+                label="CEO/Director Name"
+                placeholder="Name of CEO or Director"
+                icon={User}
+                disabled={isSubmitting}
+              />
+            </div>
 
-                  {/* Mission Statement */}
-                  <FormField
-                    control={form.control}
-                    name="mission"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Mission Statement</FormLabel>
-                        <FormControl>
-                          <Textarea
-                            {...field}
-                            placeholder="What is your complex's mission?"
-                            className="min-h-[100px] resize-none"
-                            disabled={isLoading}
-                          />
-                        </FormControl>
-                        <div className="text-xs text-gray-500">
-                          {field.value?.length || 0}/500 characters
-                        </div>
-                        {useInheritance && organizationData?.mission && (
-                          <div className="text-xs text-blue-600">
-                            Inherited: {organizationData.mission}
-                          </div>
-                        )}
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* Vision Statement */}
-                  <FormField
-                    control={form.control}
-                    name="vision"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Vision Statement</FormLabel>
-                        <FormControl>
-                          <Textarea
-                            {...field}
-                            placeholder="What is your complex's vision for the future?"
-                            className="min-h-[100px] resize-none"
-                            disabled={isLoading}
-                          />
-                        </FormControl>
-                        <div className="text-xs text-gray-500">
-                          {field.value?.length || 0}/500 characters
-                        </div>
-                        {useInheritance && organizationData?.vision && (
-                          <div className="text-xs text-blue-600">
-                            Inherited: {organizationData.vision}
-                          </div>
-                        )}
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                </CardContent>
-              </CollapsibleContent>
-            </Collapsible>
-          </Card>
-
-          {/* Departments Section */}
-          <Card>
-            <Collapsible open={isDepartmentsExpanded} onOpenChange={setIsDepartmentsExpanded}>
-              <CollapsibleTrigger asChild>
-                <div className="flex items-center justify-between p-6 cursor-pointer hover:bg-gray-50">
-                  <div>
-                    <h2 className="text-xl font-semibold text-gray-900">Departments</h2>
-                    <p className="text-sm text-gray-600">Medical departments and specialties</p>
-                  </div>
-                  {isDepartmentsExpanded ? (
-                    <ChevronUpIcon className="h-5 w-5 text-gray-500" />
-                  ) : (
-                    <ChevronDownIcon className="h-5 w-5 text-gray-500" />
-                  )}
-                </div>
-              </CollapsibleTrigger>
-              
-              <CollapsibleContent>
-                <CardContent className="px-6 pb-6 pt-0 space-y-4">
-
-                  {/* Searchable Department Selection */}
-                  <FormField
-                    control={form.control}
-                    name="departments"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-base font-medium">
-                          Medical Departments
-                        </FormLabel>
-                        <FormControl>
-                          <DepartmentSearchInput
-                            selectedDepartments={field.value || []}
-                            availableDepartments={allDepartments}
-                            onDepartmentsChange={handleDepartmentChange}
-                            disabled={isLoading}
-                            placeholder="Search departments or create new ones..."
-                            maxSelections={20}
-                            className="w-full"
-                          />
-                        </FormControl>
-                        <div className="text-sm text-gray-600">
-                          Search existing departments or type new names to create them.
-                          Selected departments will be linked to your complex.
-                        </div>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                </CardContent>
-              </CollapsibleContent>
-            </Collapsible>
-          </Card>
-
-          {/* Navigation Buttons */}
-          <div className="flex items-center justify-between pt-6">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onPrevious}
-              disabled={isLoading}
-              className="flex items-center gap-2"
+            {/* Business Profile Section */}
+            <CollapsibleCard
+              title="Business Profile"
+              isOpen={isBusinessProfileExpanded}
+              onToggle={() => setIsBusinessProfileExpanded(!isBusinessProfileExpanded)}
             >
-              <ChevronLeftIcon className="h-4 w-4" />
-              Previous
-            </Button>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Mission Field */}
+                <FormField
+                  control={form.control}
+                  name="mission"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <div className="relative">
+                          <div className="absolute left-4 top-4 z-10">
+                            <Target className="h-[18px] w-[18px] text-primary" strokeWidth={1.5} />
+                          </div>
+                          <Textarea
+                            {...field}
+                            placeholder="Enter Mission Statement"
+                            className="min-h-[100px] pl-12 pr-4 pt-4 pb-4 text-base font-lato border-border bg-background text-foreground focus-visible:ring-ring focus-visible:border-ring shadow-sm placeholder:text-muted-foreground resize-none"
+                            style={{
+                              boxShadow: '0px 0px 1px 1px rgba(21, 197, 206, 0.16)',
+                              borderRadius: '8px'
+                            }}
+                            disabled={isSubmitting}
+                          />
+                        </div>
+                      </FormControl>
+                      <div className="text-xs text-muted-foreground">
+                        {field.value?.length || 0}/500 characters
+                      </div>
 
-            <div className="flex items-center gap-2">
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Vision Field */}
+                <FormField
+                  control={form.control}
+                  name="vision"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <div className="relative">
+                          <div className="absolute left-4 top-4 z-10">
+                            <Eye className="h-[18px] w-[18px] text-primary" strokeWidth={1.5} />
+                          </div>
+                          <Textarea
+                            {...field}
+                            placeholder="Enter Vision Statement"
+                            className="min-h-[100px] pl-12 pr-4 pt-4 pb-4 text-base font-lato border-border bg-background text-foreground focus-visible:ring-ring focus-visible:border-ring shadow-sm placeholder:text-muted-foreground resize-none"
+                            style={{
+                              boxShadow: '0px 0px 1px 1px rgba(21, 197, 206, 0.16)',
+                              borderRadius: '8px'
+                            }}
+                            disabled={isSubmitting}
+                          />
+                        </div>
+                      </FormControl>
+                      <div className="text-xs text-muted-foreground">
+                        {field.value?.length || 0}/500 characters
+                      </div>
+
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              {/* Complex Overview */}
+              <FormField
+                control={form.control}
+                name="overview"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="block text-sm font-bold text-primary font-lato">
+                      Complex Overview
+                    </FormLabel>
+                    <FormControl>
+                      <Textarea
+                        {...field}
+                        placeholder="Describe your complex's services and specialties..."
+                        className="min-h-[120px] pl-4 pr-4 pt-4 pb-4 text-base font-lato border-border bg-background text-foreground focus-visible:ring-ring focus-visible:border-ring shadow-sm placeholder:text-muted-foreground resize-none"
+                        style={{
+                          boxShadow: '0px 0px 1px 1px rgba(21, 197, 206, 0.16)',
+                          borderRadius: '8px'
+                        }}
+                        disabled={isSubmitting}
+                      />
+                    </FormControl>
+                    <div className="text-xs text-muted-foreground">
+                      {field.value?.length || 0}/1000 characters
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Complex Goals */}
+              <FormField
+                control={form.control}
+                name="goals"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="block text-sm font-bold text-primary font-lato">
+                      Complex Goals
+                    </FormLabel>
+                    <FormControl>
+                      <Textarea
+                        {...field}
+                        placeholder="What are your complex's main goals and objectives?"
+                        className="min-h-[120px] pl-4 pr-4 pt-4 pb-4 text-base font-lato border-border bg-background text-foreground focus-visible:ring-ring focus-visible:border-ring shadow-sm placeholder:text-muted-foreground resize-none"
+                        style={{
+                          boxShadow: '0px 0px 1px 1px rgba(21, 197, 206, 0.16)',
+                          borderRadius: '8px'
+                        }}
+                        disabled={isSubmitting}
+                      />
+                    </FormControl>
+                    <div className="text-xs text-muted-foreground">
+                      {field.value?.length || 0}/1000 characters
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </CollapsibleCard>
+
+            {/* Departments Section */}
+            <CollapsibleCard
+              title="Departments"
+              isOpen={isDepartmentsExpanded}
+              onToggle={() => setIsDepartmentsExpanded(!isDepartmentsExpanded)}
+            >
+              <FormField
+                control={form.control}
+                name="departments"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-base font-medium">
+                      Medical Departments
+                    </FormLabel>
+                    <FormControl>
+                      <DepartmentSearchInput
+                        selectedDepartments={field.value || []}
+                        availableDepartments={allDepartments}
+                        onDepartmentsChange={handleDepartmentChange}
+                        disabled={isSubmitting}
+                        placeholder="Search departments or create new ones..."
+                        maxSelections={20}
+                        className="w-full"
+                      />
+                    </FormControl>
+                    <div className="text-sm text-muted-foreground">
+                      Search existing departments or type new names to create them.
+                      Selected departments will be linked to your complex.
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </CollapsibleCard>
+
+            {/* Bottom Navigation */}
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-12">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onPrevious}
+                disabled={isSubmitting}
+                className="w-full sm:w-auto h-[48px] px-8 font-lato text-primary border-border hover:bg-muted"
+              >
+                <ChevronLeft className="w-4 h-4 mr-2" />
+                Previous
+              </Button>
               <Button
                 type="submit"
-                disabled={isLoading || complexNameValidation.isChecking || !form.formState.isValid}
-                className="flex items-center gap-2 min-w-[120px]"
+                disabled={isSubmitting || complexNameValidation.isChecking || !form.formState.isValid}
+                className="w-full sm:w-auto h-[48px] px-8 bg-primary hover:bg-primary/90 text-primary-foreground font-lato disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isLoading ? (
+                {isSubmitting ? (
                   <>
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                    <div className="w-4 h-4 mr-2 border-2 border-current border-t-transparent rounded-full animate-spin" />
                     Saving...
                   </>
                 ) : (
                   <>
                     Next
-                    <ChevronRightIcon className="h-4 w-4" />
+                    <ChevronRight className="w-4 h-4 ml-2" />
                   </>
                 )}
               </Button>
             </div>
-          </div>
-
-        </form>
-      </Form>
+          </form>
+        </Form>
+      </div>
     </div>
   );
 };

@@ -7,6 +7,8 @@ import { PlanType } from '@/types/onboarding/common';
 import { useSubscriptionPlans, SubscriptionPlan } from '@/hooks/api/useSubscriptionPlans';
 import { useTheme } from 'next-themes';
 import { designSystem } from '@/lib/design-system';
+import { useTranslations } from 'next-intl';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 
 // Fallback plans in case API is not available - matching Figma design
 const fallbackPlans: SubscriptionPlan[] = [
@@ -68,6 +70,11 @@ export default function PlanSelectionPage() {
   const { theme, resolvedTheme } = useTheme();
   const currentTheme = (resolvedTheme || theme || 'light') as 'light' | 'dark';
   const isDark = currentTheme === 'dark';
+  
+  // Translations and RTL support
+  const t = useTranslations();
+  const locale = searchParams.get('locale') || 'en';
+  const isRTL = locale === 'ar';
   
   // Ensure theme exists in design system, fallback to light if not
   const safeTheme = designSystem.themes[currentTheme] ? currentTheme : 'light';
@@ -235,8 +242,13 @@ export default function PlanSelectionPage() {
           </div>
         )}
 
+        {/* Theme Toggle */}
+        <div className={`flex ${isRTL ? 'justify-start' : 'justify-end'} mb-8`}>
+          <ThemeToggle />
+        </div>
+
         {/* Header Section - matching Figma */}
-        <div className="text-center mb-10">
+        <div className={`text-center mb-10 ${isRTL ? 'text-right' : ''}`}>
           <h1 
             className="text-[48px] font-bold leading-[1.2] tracking-[-0.02em] mb-4"
             style={{ 
@@ -244,7 +256,7 @@ export default function PlanSelectionPage() {
               fontFamily: designSystem.typography.fontFamily.sans.join(', ')
             }}
           >
-            Choose Your Operational Structure
+            {t('onboarding.planSelection.title')}
           </h1>
           <p 
             className="text-[20px] font-semibold leading-[1.14] max-w-[852px] mx-auto"
@@ -253,7 +265,7 @@ export default function PlanSelectionPage() {
               fontFamily: designSystem.typography.fontFamily.sans.join(', ')
             }}
           >
-            This structure will help us customize your system. You can't change it later
+            {t('onboarding.planSelection.subtitle')}
           </p>
         </div>
 
@@ -355,7 +367,7 @@ export default function PlanSelectionPage() {
                   className="w-[248px] h-[48px] bg-[#00b48d] hover:bg-[#00a080] rounded-[19px] px-[10.5px] py-[10.5px] flex items-center justify-center gap-2 transition-colors duration-200 mx-auto"
                 >
                   <span className="text-[16px] font-bold leading-[1.24] text-[#fafaf8]">
-                    Choose this plan
+                    {t('onboarding.planSelection.chooseThisPlan')}
                   </span>
                   <ArrowRight className="w-[17px] h-0 stroke-[1.5px] text-[#fafaf8]" />
                 </button>
@@ -374,7 +386,7 @@ export default function PlanSelectionPage() {
                 : 'text-[#717680] hover:text-[#414651]'
             }`}
           >
-            ← Back
+            {isRTL ? '→' : '←'} {t('common.back')}
           </button>
         </div>
       </div>

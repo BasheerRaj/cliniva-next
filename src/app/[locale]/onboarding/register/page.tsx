@@ -17,28 +17,31 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { ArrowLeftIcon, ArrowRightIcon, LoaderIcon, EyeIcon, EyeOffIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import apiClient from '@/lib/axios';
-import { SkipButton } from '@/components/onboarding/SkipButton';
+import { useTheme } from 'next-themes';
+import { designSystem } from '@/lib/design-system';
+import { useTranslations } from 'next-intl';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 
-const registrationSchema = z.object({
-  firstName: z.string().min(2, 'First name must be at least 2 characters'),
-  lastName: z.string().min(2, 'Last name must be at least 2 characters'),
-  email: z.string().email('Please enter a valid email address'),
+const createRegistrationSchema = (t: any) => z.object({
+  firstName: z.string().min(2, t('errors.firstNameMin')),
+  lastName: z.string().min(2, t('errors.lastNameMin')),
+  email: z.string().email(t('errors.emailInvalid')),
   password: z
     .string()
-    .min(8, 'Password must be at least 8 characters')
+    .min(8, t('errors.passwordMin'))
     .regex(
       /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/,
-      'Password must contain uppercase, lowercase, number, and special character'
+      t('errors.passwordComplex')
     ),
   confirmPassword: z.string(),
   phone: z.string().optional(),
   gender: z.enum(['male', 'female', 'other']).optional(),
 }).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
+  message: t('errors.passwordMismatch'),
   path: ['confirmPassword'],
 });
 
-type RegistrationFormData = z.infer<typeof registrationSchema>;
+type RegistrationFormData = z.infer<ReturnType<typeof createRegistrationSchema>>;
 
 interface RegistrationPayload {
   firstName: string;
@@ -73,6 +76,16 @@ export default function RegisterPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   
   const { registerWithOnboarding, loading } = useRegister();
+  
+  // Translations
+  const t = useTranslations();
+  const isRTL = locale === 'ar';
+  
+  // Theme support
+  const { theme, resolvedTheme } = useTheme();
+  const currentTheme = (resolvedTheme || theme || 'light') as 'light' | 'dark';
+  const safeTheme = designSystem.themes[currentTheme] ? currentTheme : 'light';
+  const colors = designSystem.themes[safeTheme];
 
   useEffect(() => {
     // Retrieve selected plan from localStorage
@@ -88,11 +101,13 @@ export default function RegisterPage() {
 
     // If no plan is found in localStorage or URL params, redirect back
     if (!planType || !planId) {
-      toast.error('Please select a plan first');
+      toast.error(t('errors.selectPlanFirst'));
       router.push(`/${locale}/onboarding/plan-selection`);
     }
   }, [planType, planId, router, locale]);
 
+  const registrationSchema = createRegistrationSchema(t);
+  
   const form = useForm<RegistrationFormData>({
     resolver: zodResolver(registrationSchema),
     defaultValues: {
@@ -109,7 +124,7 @@ export default function RegisterPage() {
 
   const onSubmit = async (data: RegistrationFormData) => {
     if (!planType || !planId) {
-      toast.error('Plan information is missing. Please select a plan first.');
+      toast.error(t('errors.planMissing'));
       return;
     }
 
@@ -129,16 +144,16 @@ export default function RegisterPage() {
       };
 
       await registerWithOnboarding(onboardingData);
-      toast.success('Account created successfully!');
+      toast.success(t('errors.accountCreated'));
       
     } catch (error: any) {
       console.error('Registration failed:', error);
       
       if (error.message.includes('already exists')) {
-        toast.error('An account with this email already exists');
-        form.setError('email', { message: 'Email already exists' });
+        toast.error(t('errors.emailExists'));
+        form.setError('email', { message: t('errors.emailExists') });
       } else {
-        toast.error(error.message || 'Registration failed. Please try again.');
+        toast.error(error.message || t('errors.registrationFailed'));
       }
     }
   };
@@ -148,34 +163,67 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 relative">
-      {/* Skip Button - Top Right */}
-      <div className="absolute top-4 right-4 z-10">
-        <SkipButton 
-          size="sm" 
-          variant="ghost"
-          className="bg-white/80 backdrop-blur-sm hover:bg-white/90"
-          onSkip={() => {
-            router.push('/dashboard');
-          }}
-        />
+    <div 
+      className="min-h-screen relative overflow-hidden"
+      style={{ 
+        backgroundColor: colors.background.primary,
+        direction: isRTL ? 'rtl' : 'ltr'
+      }}
+    >
+      {/* Decorative background elements - matching design system */}
+      <div className={`absolute top-0 ${isRTL ? 'right-0' : 'left-0'} w-[400px] h-[400px] opacity-30`}>
+        <div 
+          className={`w-full h-full rounded-full transform ${isRTL ? 'translate-x-[100px]' : '-translate-x-[100px]'} -translate-y-[100px] blur-[400px]`}
+          style={{ backgroundColor: designSystem.colors.secondary[50] }}
+        ></div>
+      </div>
+      <div className={`absolute top-[200px] ${isRTL ? 'left-0' : 'right-0'} w-[300px] h-[300px] opacity-30`}>
+        <div 
+          className={`w-full h-full rounded-full transform ${isRTL ? '-translate-x-[150px]' : 'translate-x-[150px]'} blur-[400px]`}
+          style={{ backgroundColor: designSystem.colors.primary[50] }}
+        ></div>
       </div>
       
-      <div className="container mx-auto px-4 py-12">
+      <div className="container mx-auto px-4 py-12 relative z-10">
         {/* Header */}
-        <div className="flex items-center gap-4 mb-8">
-          <Button 
-            variant="ghost" 
-            onClick={handleGoBack}
-            className="flex items-center gap-2"
-          >
-            <ArrowLeftIcon className="w-4 h-4" />
-            Back
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Create Your Account</h1>
-            <p className="text-gray-600">
-              Register as organization owner for {selectedPlan?.name || planType} plan
+        <div className={`mb-8 ${isRTL ? 'text-right' : 'text-left'}`}>
+          {/* Top Bar with Back Button and Theme Toggle */}
+          <div className={`flex items-center justify-between mb-6 ${isRTL ? 'flex-row-reverse' : ''}`}>
+            <Button 
+              variant="ghost" 
+              onClick={handleGoBack}
+              className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}
+              style={{ 
+                color: colors.text.secondary,
+                backgroundColor: colors.surface.secondary 
+              }}
+            >
+              {isRTL ? (
+                <ArrowRightIcon className="w-4 h-4" />
+              ) : (
+                <ArrowLeftIcon className="w-4 h-4" />
+              )}
+              {t('common.back')}
+            </Button>
+            
+            <ThemeToggle />
+          </div>
+          
+          {/* Title and Subtitle */}
+          <div className={isRTL ? 'text-right' : 'text-left'}>
+            <h1 
+              className="text-3xl font-bold mb-2"
+              style={{ 
+                color: colors.text.primary,
+                fontFamily: designSystem.typography.fontFamily.sans.join(', ')
+              }}
+            >
+              {t('onboarding.register.title')}
+            </h1>
+            <p style={{ color: colors.text.secondary }}>
+              {t('onboarding.register.subtitle', { 
+                planName: selectedPlan?.name || t(`onboarding.planNames.${planType}`) || planType 
+              })}
             </p>
           </div>
         </div>
@@ -183,15 +231,31 @@ export default function RegisterPage() {
         <div className="max-w-md mx-auto">
           {/* Selected Plan Info */}
           {selectedPlan && (
-            <Card className="mb-6 bg-blue-50 border-blue-200">
+            <Card 
+              className="mb-6 shadow-md"
+              style={{ 
+                backgroundColor: colors.surface.secondary,
+                borderColor: colors.border.medium 
+              }}
+            >
               <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="font-semibold text-blue-900">{selectedPlan.name}</h3>
-                    <p className="text-sm text-blue-700 capitalize">{selectedPlan.planType} Plan</p>
+                <div className={`flex items-center justify-between ${isRTL ? 'flex-row-reverse' : ''}`}>
+                  <div className={isRTL ? 'text-right' : 'text-left'}>
+                    <h3 
+                      className="font-semibold"
+                      style={{ color: colors.text.primary }}
+                    >
+                      {selectedPlan.name || t(`onboarding.planNames.${planType}`) || planType}
+                    </h3>
+                    <p 
+                      className="text-sm capitalize"
+                      style={{ color: colors.text.secondary }}
+                    >
+                      {t(`onboarding.planNames.${selectedPlan.planType || planType}`) || selectedPlan.planType || planType}
+                    </p>
                   </div>
-                  <div className="text-blue-600">
-                    ✓ Selected
+                  <div style={{ color: designSystem.colors.secondary[500] }}>
+                    ✓ {t('onboarding.register.planSelected')}
                   </div>
                 </div>
               </CardContent>
@@ -199,9 +263,20 @@ export default function RegisterPage() {
           )}
 
           {/* Registration Form */}
-          <Card className="shadow-lg">
+          <Card 
+            className="shadow-lg"
+            style={{ 
+              backgroundColor: colors.surface.primary,
+              borderColor: colors.border.light 
+            }}
+          >
             <CardHeader>
-              <CardTitle className="text-center">Owner Account Registration</CardTitle>
+              <CardTitle 
+                className="text-center"
+                style={{ color: colors.text.primary }}
+              >
+                {t('onboarding.register.ownerAccountRegistration')}
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <Form {...form}>
@@ -213,9 +288,15 @@ export default function RegisterPage() {
                       name="firstName"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>First Name *</FormLabel>
+                          <FormLabel className={isRTL ? 'text-right' : 'text-left'}>
+                            {t('onboarding.register.firstName')} {t('onboarding.register.required')}
+                          </FormLabel>
                           <FormControl>
-                            <Input placeholder="John" {...field} />
+                            <Input 
+                              placeholder={t('onboarding.register.firstNamePlaceholder')} 
+                              className={isRTL ? 'text-right' : 'text-left'}
+                              {...field} 
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -226,9 +307,15 @@ export default function RegisterPage() {
                       name="lastName"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Last Name *</FormLabel>
+                          <FormLabel className={isRTL ? 'text-right' : 'text-left'}>
+                            {t('onboarding.register.lastName')} {t('onboarding.register.required')}
+                          </FormLabel>
                           <FormControl>
-                            <Input placeholder="Doe" {...field} />
+                            <Input 
+                              placeholder={t('onboarding.register.lastNamePlaceholder')} 
+                              className={isRTL ? 'text-right' : 'text-left'}
+                              {...field} 
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -242,11 +329,14 @@ export default function RegisterPage() {
                     name="email"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Email Address *</FormLabel>
+                        <FormLabel className={isRTL ? 'text-right' : 'text-left'}>
+                          {t('onboarding.register.email')} {t('onboarding.register.required')}
+                        </FormLabel>
                         <FormControl>
                           <Input 
                             type="email" 
-                            placeholder="john@example.com" 
+                            placeholder={t('onboarding.register.emailPlaceholder')} 
+                            className={isRTL ? 'text-right' : 'text-left'}
                             {...field} 
                           />
                         </FormControl>
@@ -261,11 +351,14 @@ export default function RegisterPage() {
                     name="phone"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Phone Number</FormLabel>
+                        <FormLabel className={isRTL ? 'text-right' : 'text-left'}>
+                          {t('onboarding.register.phone')}
+                        </FormLabel>
                         <FormControl>
                           <Input 
                             type="tel" 
-                            placeholder="+1 (555) 123-4567" 
+                            placeholder={t('onboarding.register.phonePlaceholder')} 
+                            className={isRTL ? 'text-right' : 'text-left'}
                             {...field} 
                           />
                         </FormControl>
@@ -280,17 +373,19 @@ export default function RegisterPage() {
                     name="gender"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Gender</FormLabel>
+                        <FormLabel className={isRTL ? 'text-right' : 'text-left'}>
+                          {t('onboarding.register.gender')}
+                        </FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                           <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select gender (optional)" />
+                            <SelectTrigger className={isRTL ? 'text-right' : 'text-left'}>
+                              <SelectValue placeholder={t('onboarding.register.genderPlaceholder')} />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="male">Male</SelectItem>
-                            <SelectItem value="female">Female</SelectItem>
-                            <SelectItem value="other">Other</SelectItem>
+                            <SelectItem value="male">{t('onboarding.register.genderMale')}</SelectItem>
+                            <SelectItem value="female">{t('onboarding.register.genderFemale')}</SelectItem>
+                            <SelectItem value="other">{t('onboarding.register.genderOther')}</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -304,19 +399,22 @@ export default function RegisterPage() {
                     name="password"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Password *</FormLabel>
+                        <FormLabel className={isRTL ? 'text-right' : 'text-left'}>
+                          {t('onboarding.register.password')} {t('onboarding.register.required')}
+                        </FormLabel>
                         <FormControl>
                           <div className="relative">
                             <Input 
                               type={showPassword ? "text" : "password"} 
-                              placeholder="Enter a strong password"
+                              placeholder={t('onboarding.register.passwordPlaceholder')}
+                              className={isRTL ? 'text-right pr-10' : 'text-left pr-10'}
                               {...field} 
                             />
                             <Button
                               type="button"
                               variant="ghost"
                               size="sm"
-                              className="absolute right-0 top-0 h-full px-3"
+                              className={`absolute ${isRTL ? 'left-0' : 'right-0'} top-0 h-full px-3`}
                               onClick={() => setShowPassword(!showPassword)}
                             >
                               {showPassword ? (
@@ -338,19 +436,22 @@ export default function RegisterPage() {
                     name="confirmPassword"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Confirm Password *</FormLabel>
+                        <FormLabel className={isRTL ? 'text-right' : 'text-left'}>
+                          {t('onboarding.register.confirmPassword')} {t('onboarding.register.required')}
+                        </FormLabel>
                         <FormControl>
                           <div className="relative">
                             <Input 
                               type={showConfirmPassword ? "text" : "password"} 
-                              placeholder="Confirm your password"
+                              placeholder={t('onboarding.register.confirmPasswordPlaceholder')}
+                              className={isRTL ? 'text-right pr-10' : 'text-left pr-10'}
                               {...field} 
                             />
                             <Button
                               type="button"
                               variant="ghost"
                               size="sm"
-                              className="absolute right-0 top-0 h-full px-3"
+                              className={`absolute ${isRTL ? 'left-0' : 'right-0'} top-0 h-full px-3`}
                               onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                             >
                               {showConfirmPassword ? (
@@ -367,39 +468,57 @@ export default function RegisterPage() {
                   />
 
                   {/* Password Requirements */}
-                  <div className="text-xs text-gray-500 bg-gray-50 p-3 rounded">
-                    Password must contain:
-                    <ul className="mt-1 ml-4 list-disc">
-                      <li>At least 8 characters</li>
-                      <li>One uppercase letter</li>
-                      <li>One lowercase letter</li>
-                      <li>One number</li>
-                      <li>One special character (@$!%*?&)</li>
+                  <div 
+                    className={`text-xs p-3 rounded ${isRTL ? 'text-right' : 'text-left'}`}
+                    style={{ 
+                      color: colors.text.tertiary,
+                      backgroundColor: colors.surface.secondary 
+                    }}
+                  >
+                    {t('onboarding.register.passwordRequirements')}
+                    <ul className={`mt-1 ${isRTL ? 'mr-4 list-disc' : 'ml-4 list-disc'}`}>
+                      <li>{t('onboarding.register.passwordReq1')}</li>
+                      <li>{t('onboarding.register.passwordReq2')}</li>
+                      <li>{t('onboarding.register.passwordReq3')}</li>
+                      <li>{t('onboarding.register.passwordReq4')}</li>
+                      <li>{t('onboarding.register.passwordReq5')}</li>
                     </ul>
                   </div>
 
                   {/* Submit Button */}
                   <Button 
                     type="submit" 
-                    className="w-full bg-blue-600 hover:bg-blue-700"
+                    className={`w-full text-white font-semibold transition-colors duration-200 ${isRTL ? 'flex-row-reverse' : ''}`}
+                    style={{ 
+                      backgroundColor: designSystem.colors.secondary[500] 
+                    }}
+                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = designSystem.colors.secondary[600]}
+                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = designSystem.colors.secondary[500]}
                     disabled={loading}
                     size="lg"
                   >
                     {loading ? (
                       <>
-                        <LoaderIcon className="w-4 h-4 animate-spin mr-2" />
-                        Creating Account...
+                        <LoaderIcon className={`w-4 h-4 animate-spin ${isRTL ? 'ml-2' : 'mr-2'}`} />
+                        {t('onboarding.register.creatingAccount')}
                       </>
                     ) : (
                       <>
-                        Create Account
-                        <ArrowRightIcon className="w-4 h-4 ml-2" />
+                        {t('onboarding.register.createAccount')}
+                        {isRTL ? (
+                          <ArrowLeftIcon className="w-4 h-4 mr-2" />
+                        ) : (
+                          <ArrowRightIcon className="w-4 h-4 ml-2" />
+                        )}
                       </>
                     )}
                   </Button>
 
-                  <p className="text-xs text-gray-500 text-center">
-                    By creating an account, you agree to our Terms of Service and Privacy Policy
+                  <p 
+                    className="text-xs text-center"
+                    style={{ color: colors.text.tertiary }}
+                  >
+                    {t('onboarding.register.termsAgreement')}
                   </p>
                 </form>
               </Form>

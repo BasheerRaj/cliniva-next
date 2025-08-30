@@ -68,6 +68,54 @@
     "enterUsername": "Enter username",
     "enterPassword": "Enter password"
   },
+  "onboarding": {
+    "planSelection": {
+      "title": "Choose Your Operational Structure",
+      "subtitle": "This structure will help us customize your system. You can't change it later",
+      "companyPlan": "Company Plan",
+      "complexPlan": "Complex Plan",
+      "clinicPlan": "Single Clinic Plan",
+      "chooseThisPlan": "Choose this plan"
+    },
+    "planNames": {
+      "company": "Company Plan",
+      "complex": "Complex Plan", 
+      "clinic": "Single Clinic Plan"
+    },
+    "register": {
+      "title": "Create Your Account",
+      "subtitle": "Register as organization owner for {planName}",
+      "ownerAccountRegistration": "Owner Account Registration",
+      "planSelected": "Selected",
+      "firstName": "First Name",
+      "lastName": "Last Name",
+      "email": "Email Address",
+      "phone": "Phone Number",
+      "gender": "Gender",
+      "password": "Password",
+      "confirmPassword": "Confirm Password",
+      "firstNamePlaceholder": "John",
+      "lastNamePlaceholder": "Doe",
+      "emailPlaceholder": "john@example.com",
+      "phonePlaceholder": "+1 (555) 123-4567",
+      "passwordPlaceholder": "Enter a strong password",
+      "confirmPasswordPlaceholder": "Confirm your password",
+      "genderPlaceholder": "Select gender (optional)",
+      "genderMale": "Male",
+      "genderFemale": "Female",
+      "genderOther": "Other",
+      "passwordRequirements": "Password must contain:",
+      "passwordReq1": "At least 8 characters",
+      "passwordReq2": "One uppercase letter",
+      "passwordReq3": "One lowercase letter",
+      "passwordReq4": "One number",
+      "passwordReq5": "One special character (@$!%*?&)",
+      "createAccount": "Create Account",
+      "creatingAccount": "Creating Account...",
+      "termsAgreement": "By creating an account, you agree to our Terms of Service and Privacy Policy",
+      "required": "*"
+    }
+  },
   "errors": {
     "unauthorized": "Unauthorized",
     "notFound": "Page not found",
@@ -76,6 +124,17 @@
     "validationError": "Validation error",
     "invalidCredentials": "Invalid credentials",
     "emailRequired": "Email is required",
-    "passwordRequired": "Password is required"
+    "passwordRequired": "Password is required",
+    "firstNameMin": "First name must be at least 2 characters",
+    "lastNameMin": "Last name must be at least 2 characters",
+    "emailInvalid": "Please enter a valid email address",
+    "passwordMin": "Password must be at least 8 characters",
+    "passwordComplex": "Password must contain uppercase, lowercase, number, and special character",
+    "passwordMismatch": "Passwords don't match",
+    "planMissing": "Plan information is missing. Please select a plan first.",
+    "emailExists": "An account with this email already exists",
+    "registrationFailed": "Registration failed. Please try again.",
+    "accountCreated": "Account created successfully!",
+    "selectPlanFirst": "Please select a plan first"
   }
 } 

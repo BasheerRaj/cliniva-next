@@ -68,6 +68,54 @@
     "enterUsername": "أدخل اسم المستخدم",
     "enterPassword": "أدخل كلمة المرور"
   },
+  "onboarding": {
+    "planSelection": {
+      "title": "اختر هيكل العمليات الخاص بك",
+      "subtitle": "هذا الهيكل سيساعدنا في تخصيص نظامك. لا يمكنك تغييره لاحقاً",
+      "companyPlan": "خطة الشركة",
+      "complexPlan": "خطة المجمع",
+      "clinicPlan": "خطة العيادة الواحدة",
+      "chooseThisPlan": "اختر هذه الخطة"
+    },
+    "planNames": {
+      "company": "خطة الشركة",
+      "complex": "خطة المجمع", 
+      "clinic": "خطة العيادة الواحدة"
+    },
+    "register": {
+      "title": "إنشاء حسابك",
+      "subtitle": "التسجيل كمالك مؤسسة لـ{planName}",
+      "ownerAccountRegistration": "تسجيل حساب المالك",
+      "planSelected": "محدد",
+      "firstName": "الاسم الأول",
+      "lastName": "الاسم الأخير",
+      "email": "عنوان البريد الإلكتروني",
+      "phone": "رقم الهاتف",
+      "gender": "الجنس",
+      "password": "كلمة المرور",
+      "confirmPassword": "تأكيد كلمة المرور",
+      "firstNamePlaceholder": "أحمد",
+      "lastNamePlaceholder": "محمد",
+      "emailPlaceholder": "ahmed@example.com",
+      "phonePlaceholder": "+966 50 123 4567",
+      "passwordPlaceholder": "أدخل كلمة مرور قوية",
+      "confirmPasswordPlaceholder": "أكد كلمة المرور",
+      "genderPlaceholder": "اختر الجنس (اختياري)",
+      "genderMale": "ذكر",
+      "genderFemale": "أنثى",
+      "genderOther": "آخر",
+      "passwordRequirements": "يجب أن تحتوي كلمة المرور على:",
+      "passwordReq1": "8 أحرف على الأقل",
+      "passwordReq2": "حرف كبير واحد",
+      "passwordReq3": "حرف صغير واحد",
+      "passwordReq4": "رقم واحد",
+      "passwordReq5": "رمز خاص واحد (@$!%*?&)",
+      "createAccount": "إنشاء حساب",
+      "creatingAccount": "جاري إنشاء الحساب...",
+      "termsAgreement": "بإنشاء حساب، فإنك توافق على شروط الخدمة وسياسة الخصوصية الخاصة بنا",
+      "required": "*"
+    }
+  },
   "errors": {
     "unauthorized": "غير مخول",
     "notFound": "الصفحة غير موجودة",
@@ -76,6 +124,17 @@
     "validationError": "خطأ في التحقق",
     "invalidCredentials": "بيانات اعتماد غير صحيحة",
     "emailRequired": "البريد الإلكتروني مطلوب",
-    "passwordRequired": "كلمة المرور مطلوبة"
+    "passwordRequired": "كلمة المرور مطلوبة",
+    "firstNameMin": "يجب أن يكون الاسم الأول على الأقل حرفين",
+    "lastNameMin": "يجب أن يكون الاسم الأخير على الأقل حرفين",
+    "emailInvalid": "يرجى إدخال عنوان بريد إلكتروني صحيح",
+    "passwordMin": "يجب أن تكون كلمة المرور 8 أحرف على الأقل",
+    "passwordComplex": "يجب أن تحتوي كلمة المرور على أحرف كبيرة وصغيرة ورقم ورمز خاص",
+    "passwordMismatch": "كلمات المرور غير متطابقة",
+    "planMissing": "معلومات الخطة مفقودة. يرجى اختيار خطة أولاً.",
+    "emailExists": "يوجد حساب بهذا البريد الإلكتروني بالفعل",
+    "registrationFailed": "فشل التسجيل. يرجى المحاولة مرة أخرى.",
+    "accountCreated": "تم إنشاء الحساب بنجاح!",
+    "selectPlanFirst": "يرجى اختيار خطة أولاً"
   }
 } 

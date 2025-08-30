@@ -41,10 +41,17 @@
     "joinThousands": "انضم إلى آلاف مقدمي الرعاية الصحية الذين يثقون في كلينيفا لإدارة عملياتهم بكفاءة.",
     "getStartedToday": "ابدأ اليوم"
   },
+  "branding": {
+    "systemName": "نظام كلينيفا",
+    "welcomeTitle": "مرحباً بك في نظام كلينيفا",
+    "welcomeSubtitle": "مستقبل إدارة المراكز الطبية يبدأ من هنا.."
+  },
   "auth": {
-    "loginTitle": "تسجيل الدخول إلى حسابك",
+    "loginTitle": "تسجيل الدخول إلى كلينيفا",
+    "loginSubtitle": "تسجيل الدخول إلى حسابك",
     "registerTitle": "إنشاء حسابك",
     "email": "البريد الإلكتروني",
+    "username": "اسم المستخدم",
     "password": "كلمة المرور",
     "confirmPassword": "تأكيد كلمة المرور",
     "firstName": "الاسم الأول",
@@ -56,7 +63,10 @@
     "hasAccount": "هل لديك حساب بالفعل؟",
     "signUp": "إنشاء حساب",
     "signIn": "تسجيل الدخول",
-    "or": "أو"
+    "logIn": "تسجيل الدخول",
+    "or": "أو",
+    "enterUsername": "أدخل اسم المستخدم",
+    "enterPassword": "أدخل كلمة المرور"
   },
   "errors": {
     "unauthorized": "غير مخول",

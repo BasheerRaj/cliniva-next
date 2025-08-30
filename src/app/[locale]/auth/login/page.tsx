@@ -4,18 +4,22 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import Link from 'next/link';
-import { Mail, Lock } from 'lucide-react';
+import { User, Lock, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
+
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import ThemeSwitcher from '@/components/ThemeSwitcher';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
-import { useTranslations } from 'next-intl';
+import ThemeSwitcher from '@/components/ThemeSwitcher';
+import { useLocale, useTranslations } from 'next-intl';
 
 export default function LoginPage() {
   const t = useTranslations();
+  const locale = useLocale();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -47,188 +51,216 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex">
-      {/* Theme Switcher and Language Switcher - Top Right */}
-      <div className="absolute top-4 right-4 z-10 flex gap-2">
+    <div className="w-screen h-screen flex overflow-hidden flex-col lg:flex-row">
+      {/* Theme Switcher and Language Switcher - Position based on LTR/RTL */}
+      <div className="absolute top-4 lg:top-8 z-10 flex gap-3 lg:gap-4 ltr:right-4 rtl:left-4 lg:ltr:right-8 lg:rtl:left-8">
         <LanguageSwitcher />
         <ThemeSwitcher />
       </div>
-      
+
       {/* Left Side - Branding */}
-      <div className="w-1/2 bg-[#69a3e9] relative flex items-center justify-center rounded-r-[48px]">
-        {/* Decorative Icons */}
-        <div className="absolute top-0 right-0 p-6">
-          <svg width="96" height="96" viewBox="0 0 105 128" className="opacity-25">
-            <path d="M26.8922 0.000382133L41.1584 3.82302C35.1335 50.1443 61.0576 95.0463 104.186 112.989L100.363 127.255L0 100.363L26.8922 0.000382133Z"
+      <div
+        className={`w-full lg:w-1/2 bg-primary dark:bg-primary/90 relative flex items-center justify-center min-h-[50vh] lg:min-h-screen ${
+          locale === 'ar'
+            ? 'lg:rounded-l-[48px]'
+            : 'lg:rounded-r-[48px]'
+        }`}
+      >
+        {/* Decorative Elements - Hidden on mobile */}
+        <div className="absolute top-[754px] left-[570px] hidden xl:block">
+          <svg width="146" height="146" viewBox="0 0 146 146" fill="none" className="opacity-25">
+            <path d="M73 0L83.3771 0C87.7114 32.5309 113.469 58.2887 146 62.623L146 73L73 73L73 0ZM0 73L73 73L73 146L63.2667 146L63.2667 141.134C63.2667 108.88 37.1198 82.7334 4.86633 82.7334L0 82.7334L0 73Z"
                   fill="#FAF6F5" fillOpacity="0.25"/>
           </svg>
         </div>
-        <div className="absolute bottom-0 right-0 p-6">
-          <svg width="96" height="96" viewBox="0 0 146 146" className="opacity-25">
-            <path d="M73.0001 -3.19093e-06L83.3771 -3.64452e-06C87.7114 32.5309 113.469 58.2887 146 62.623L146 73L73.0001 73L73.0001 -3.19093e-06ZM0.000118879 73L73.0001 73L73.0001 146L63.2667 146L63.2667 141.134C63.2667 108.88 37.1198 82.7334 4.86633 82.7334L0.000119305 82.7334L0.000118879 73Z"
+
+        <div className="absolute top-[543px] left-[-145.84px] hidden xl:block">
+          <svg width="399.25" height="399.25" viewBox="0 0 399.25 399.25" fill="none" className="opacity-25">
+            <path d="M199.625 0C308.785 0 397.25 88.465 397.25 306.785 308.785 395.25 199.625 395.25C90.465 395.25 2 306.785 2 197.625C2 88.465 90.465 0 199.625 0ZM199.625 99.3125C248.495 99.3125 288.125 138.942 288.125 187.8125C288.125 236.682 248.495 276.3125 199.625 276.3125C150.755 276.3125 111.125 236.682 111.125 187.8125C111.125 138.942 150.755 99.3125 199.625 99.3125Z"
                   fill="#FAF6F5" fillOpacity="0.25"/>
           </svg>
         </div>
-        <div className="absolute bottom-0 left-0 p-6">
-          <svg width="96" height="96" viewBox="0 0 181 274" className="opacity-25">
-            <path d="M-72.7725 64.5586L-62.3863 46.5691C-1.6499 71.6163 68.7887 52.7422 108.864 0.682616L126.854 11.0688L53.7856 137.627L-72.7725 64.5586ZM-19.2819 264.186L53.7864 137.627L180.345 210.696L170.602 227.57L162.165 222.699C106.248 190.415 34.7468 209.574 2.46313 265.491L-2.40796 273.928L-19.2819 264.186Z"
-                  fill="#FAF6F5" fillOpacity="0.25"/>
+
+        <div className="absolute top-0 left-[620px] hidden xl:block">
+          <svg width="127.26" height="127.26" viewBox="0 0 127.26 127.26" fill="none" className="opacity-25">
+            <path d="M63.63 0C98.94 0 127.26 28.32 127.26 63.63C127.26 98.94 98.94 127.26 63.63 127.26C28.32 127.26 0 98.94 0 63.63C0 28.32 28.32 0 63.63 0Z"
+                  fill="#DEFFF8" fillOpacity="0.25"/>
           </svg>
         </div>
 
         {/* Brand Content */}
-        <div className="flex flex-col items-center gap-16 w-[398px] z-10">
+        <div className="flex flex-col items-center gap-8 lg:gap-16 w-full max-w-[398px] z-10 px-8 lg:px-0">
           <div className="text-center">
-            <div className="mx-auto mb-8">
-              <svg width="96" height="96" viewBox="0 0 96 96" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <div className="mx-auto mb-4 lg:mb-8">
+              <svg width="64" height="64" viewBox="0 0 96 96" fill="none" xmlns="http://www.w3.org/2000/svg" className="lg:w-24 lg:h-24">
                 <path d="M96 48V54.8232C74.6098 57.6732 57.6732 74.6098 54.8232 96H48V48H96ZM48 0V48H0V41.5996H3.2002C24.4078 41.5995 41.5995 24.4078 41.5996 3.2002V0H48Z"
                       fill="#FAF6F5"/>
               </svg>
             </div>
-            <h1 className="text-[#faf6f5] text-[48px] font-semibold leading-none tracking-tight">
-              {t('home.title')}
+            <h1 className="text-primary-foreground text-3xl lg:text-[48px] font-semibold leading-none tracking-tight font-inter">
+              {t('branding.systemName')}
             </h1>
-            <p className="text-[#faf6f5] text-xl font-medium mt-4 opacity-90">
-              {t('home.heroTitle')} {t('home.heroSubtitle')}
+            <p className="text-primary-foreground/90 text-sm lg:text-xl font-medium mt-2 lg:mt-4 font-inter leading-relaxed">
+              {t('branding.welcomeTitle')}<br className="hidden lg:block"/>
+              {t('branding.welcomeSubtitle')}
             </p>
           </div>
-          
-          <div className="text-center">
-            <p className="text-[#faf6f5]/90 text-lg mb-4 font-medium">
-              Welcome Back!
-            </p>
-            <p className="text-[#faf6f5]/80 text-sm max-w-80 leading-relaxed">
-              Sign in to access your healthcare management dashboard and continue providing excellent patient care.
-            </p>
-          </div>
+
+
         </div>
       </div>
 
-      {/* Right Side - Form */}
-      <div className="w-1/2 flex items-center justify-center px-8">
-        <div className="w-full max-w-md">
-          <div className="mb-8">
-            <h2 className="text-[#69a3e9] text-4xl font-semibold text-center mb-2">
+      {/* Right Side - Login Form */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center px-8 lg:px-16 bg-background min-h-[50vh] lg:min-h-screen">
+        <div className="w-full max-w-[422px]">
+          <div className="mb-8 lg:mb-12">
+            <h2 className="text-primary text-2xl lg:text-[36px] font-semibold text-center mb-2 font-lato leading-tight">
               {t('auth.loginTitle')}
             </h2>
-            <p className="text-gray-600 text-center">
-              Enter your credentials to access your account
-            </p>
           </div>
 
           <form className="space-y-6" onSubmit={handleSubmit}>
+            {/* Username Field */}
             <div className="space-y-2">
-              <label htmlFor="email" className="block text-sm font-medium text-foreground">
-                {t('auth.email')} *
+              <label htmlFor="email" className="block text-sm font-bold text-primary font-lato">
+                {t('auth.username')}
               </label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 z-10">
+                  <User className="h-[18px] w-[18px] text-primary" strokeWidth={1.5} />
+                </div>
                 <Input
                   id="email"
                   name="email"
-                  type="email"
-                  autoComplete="email"
+                  type="text"
+                  autoComplete="username"
                   required
-                  className="pl-9 h-11 focus-visible:ring-[#69a3e9] focus-visible:border-[#69a3e9] border-input"
-                  placeholder={t('auth.email')}
+                  className="h-[48px] pl-12 pr-4 text-base font-lato border-border bg-background text-foreground focus-visible:ring-ring focus-visible:border-ring shadow-sm placeholder:text-muted-foreground"
+                  placeholder={t('auth.enterUsername')}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  style={{
+                    boxShadow: '0px 0px 1px 1px rgba(21, 197, 206, 0.16)',
+                    borderRadius: '8px'
+                  }}
                 />
               </div>
             </div>
 
+            {/* Password Field */}
             <div className="space-y-2">
-              <label htmlFor="password" className="block text-sm font-medium text-foreground">
-                {t('auth.password')} *
+              <label htmlFor="password" className="block text-sm font-bold text-primary font-lato">
+                {t('auth.password')}
               </label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 z-10">
+                  <Lock className="h-[18px] w-[18px] text-primary" strokeWidth={1.5} />
+                </div>
                 <Input
                   id="password"
                   name="password"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   autoComplete="current-password"
                   required
-                  className="pl-9 h-11 focus-visible:ring-[#69a3e9] focus-visible:border-[#69a3e9] border-input"
-                  placeholder={t('auth.password')}
+                  className="h-[48px] pl-12 pr-12 text-base font-lato border-border bg-background text-foreground focus-visible:ring-ring focus-visible:border-ring shadow-sm placeholder:text-muted-foreground"
+                  placeholder={t('auth.enterPassword')}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  style={{
+                    boxShadow: '0px 0px 1px 1px rgba(21, 197, 206, 0.16)',
+                    borderRadius: '8px'
+                  }}
                 />
+                <button
+                  type="button"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 z-10"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-[18px] w-[18px] text-primary" strokeWidth={1.5} />
+                  ) : (
+                    <Eye className="h-[18px] w-[18px] text-primary" strokeWidth={1.5} />
+                  )}
+                </button>
               </div>
             </div>
 
+            {/* Remember Me */}
             <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <input
+              <div className="flex items-center gap-3">
+                <Checkbox
                   id="rememberMe"
-                  name="rememberMe"
-                  type="checkbox"
-                  className="h-4 w-4 text-[#69a3e9] focus:ring-[#69a3e9] border-gray-300 rounded"
                   checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
+                  onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+                  className="w-4 h-4 border-[#00B48D] data-[state=checked]:bg-[#00B48D] data-[state=checked]:border-[#00B48D]"
                 />
-                <label htmlFor="rememberMe" className="ml-2 block text-sm text-gray-900">
+                <label htmlFor="rememberMe" className="text-sm font-lato text-primary font-normal leading-relaxed">
                   {t('auth.rememberMe')}
                 </label>
               </div>
 
               <div className="text-sm">
-                <Link href="/auth/forgot-password" className="font-medium text-[#69a3e9] hover:text-blue-500">
+                <Link href="/auth/forgot-password" className="font-medium text-primary hover:text-primary/80 font-lato">
                   {t('auth.forgotPassword')}
                 </Link>
               </div>
             </div>
 
             {error && (
-              <Alert variant="destructive">
-                <AlertDescription>{error}</AlertDescription>
+              <Alert variant="destructive" className="border-red-200 bg-red-50">
+                <AlertDescription className="text-red-800 font-lato">{error}</AlertDescription>
               </Alert>
             )}
 
+            {/* Login Button */}
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-full h-11 bg-[#69a3e9] hover:bg-[#4a8ce0] text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
+              className="w-full h-[48px] bg-[#00B48D] hover:bg-[#009B7D] text-white font-semibold text-lg font-lato rounded-lg shadow-lg hover:shadow-xl transition-all duration-200"
               size="lg"
             >
               {isLoading ? (
                 <>
-                  <div className="animate-spin -ml-1 mr-3 h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
+                  <div className="animate-spin -ml-1 mr-3 h-5 w-5 border-2 border-white border-t-transparent rounded-full"></div>
                   {t('common.loading')}
                 </>
               ) : (
-                t('auth.signIn')
+                t('auth.logIn')
               )}
             </Button>
           </form>
 
-          <div className="mt-8">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300" />
+          {/* Get Started Section - Figma Design */}
+          <div className="mt-12 lg:mt-16 text-center">
+            <p className="text-muted-foreground text-sm lg:text-base font-lato leading-relaxed max-w-md mx-auto mb-8">
+              {t('auth.noAccount')} {t('home.startOrganization')}.
+            </p>
+            
+            {/* Get Started Button - Exact Figma Design with System Colors */}
+            <div className="flex justify-center">
+              <div className="relative w-[268px] h-[60px] bg-primary hover:bg-primary/90 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 cursor-pointer overflow-hidden">
+                <Link href="/onboarding/plan-selection" className="block w-full h-full relative">
+                  {/* Star Icon - Exact Figma positioning */}
+                  <div className="absolute left-0 top-0 w-[60px] h-[60px] flex items-center justify-center">
+                    <svg width="30" height="30" viewBox="0 0 30 30" fill="none">
+                      <defs>
+                        <linearGradient id="starGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" style={{ stopColor: 'hsl(var(--primary-foreground))', stopOpacity: 0.8 }} />
+                          <stop offset="100%" style={{ stopColor: 'hsl(var(--primary-foreground))', stopOpacity: 0.4 }} />
+                        </linearGradient>
+                      </defs>
+                      <path d="M15 0L18.3677 11.6323H30L20.4593 18.3677L23.8269 30L15 23.2644L6.17308 30L9.54069 18.3677L0 11.6323H11.6323L15 0Z"
+                            fill="url(#starGradient)"/>
+                    </svg>
+                  </div>
+                  {/* Text - Exact Figma styling: x:84px, y:8px, w:184px, h:43px */}
+                  <div className="absolute left-[84px] top-[8px] w-[184px] h-[43px] flex items-center justify-center">
+                                         <span className="text-[24px] font-lato font-semibold text-primary-foreground leading-[1.2] text-center">
+                        {t('common.getStarted')}
+                      </span>
+                  </div>
+                </Link>
               </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">{t('auth.noAccount')}</span>
-              </div>
-            </div>
-
-            <div className="mt-6 space-y-3">
-              <Button
-                asChild
-                variant="outline"
-                className="w-full h-11 border-[#69a3e9] text-[#69a3e9] hover:bg-[#69a3e9]/10 hover:text-[#69a3e9]"
-                size="lg"
-              >
-                <Link href="/onboarding/plan-selection">{t('home.startOrganization')}</Link>
-              </Button>
-              
-              <Button
-                asChild
-                variant="ghost"
-                className="w-full text-muted-foreground hover:text-[#69a3e9]"
-              >
-                <Link href="/auth/register">{t('home.registerPatient')}</Link>
-              </Button>
             </div>
           </div>
         </div>

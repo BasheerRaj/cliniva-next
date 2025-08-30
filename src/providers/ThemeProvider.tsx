@@ -1,6 +1,7 @@
 'use client';
 
 import { ThemeProvider as NextThemesProvider } from 'next-themes';
+import { ThemeProvider as DesignSystemProvider } from './theme-provider';
 import * as React from 'react';
 
 interface ThemeProviderProps {
@@ -11,13 +12,19 @@ interface ThemeProviderProps {
 export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
   return (
     <NextThemesProvider
-      attribute="class"
+      attribute="data-theme"
       defaultTheme="light"
       enableSystem={true}
       disableTransitionOnChange={false}
+      themes={['light', 'dark']}
       {...props}
     >
-      {children}
+      <DesignSystemProvider
+        defaultTheme="light"
+        storageKey="cliniva-theme"
+      >
+        {children}
+      </DesignSystemProvider>
     </NextThemesProvider>
   );
 }

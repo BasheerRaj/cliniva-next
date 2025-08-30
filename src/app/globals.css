@@ -1,49 +1,139 @@
 @import "tailwindcss";
 
+/* Cliniva Design System Theme Variables */
+
+/* Light Theme (Default) */
+:root,
+[data-theme="light"] {
+  /* Design System Theme Variables */
+  --theme-background-primary: #FFFDFC;
+  --theme-background-secondary: #FAFAF8;
+  --theme-background-tertiary: #FAF6F5;
+  --theme-background-inverse: #080101;
+  --theme-background-overlay: rgba(0, 0, 0, 0.5);
+  --theme-background-card: #FFFDFC;
+  --theme-background-modal: #FFFDFC;
+  --theme-background-popover: #FAFAF8;
+  
+  --theme-text-primary: #414651;
+  --theme-text-secondary: #717680;
+  --theme-text-tertiary: #8B8B8B;
+  --theme-text-inverse: #FCFDFF;
+  --theme-text-muted: #9CA3AF;
+  --theme-text-accent: #2563EB;
+  
+  --theme-border-light: #E4E2DD;
+  --theme-border-medium: #B8B1A9;
+  --theme-border-dark: #717680;
+  --theme-border-focus: #69A3E9;
+  
+  --theme-surface-primary: #FFFDFC;
+  --theme-surface-secondary: #FAFAF8;
+  --theme-surface-tertiary: #FAF6F5;
+  --theme-surface-hover: #F5F3F0;
+  --theme-surface-active: #F0EDE8;
+  
+  --theme-primary-light: #E1EDFB;
+  --theme-primary-default: #69A3E9;
+  --theme-primary-dark: #3071BF;
+  
+  --theme-secondary-light: #E2F6EC;
+  --theme-secondary-default: #83DFDF;
+  --theme-secondary-dark: #00B48D;
+}
+
+/* Dark Theme */
+[data-theme="dark"] {
+  --theme-background-primary: #030000;
+  --theme-background-secondary: #080806;
+  --theme-background-tertiary: #0A0707;
+  --theme-background-inverse: #FFFDFC;
+  --theme-background-overlay: rgba(0, 0, 0, 0.8);
+  --theme-background-card: #161616;
+  --theme-background-modal: #161616;
+  --theme-background-popover: #161616;
+  
+  --theme-text-primary: #3d78bd;
+  --theme-text-secondary: #2b9999;
+  --theme-text-tertiary: #9CA3AF;
+  --theme-text-inverse: #030000;
+  --theme-text-muted: #6B7280;
+  --theme-text-accent: #66E4C9;
+  
+  --theme-border-light: #21201C;
+  --theme-border-medium: #55514A;
+  --theme-border-dark: #81858C;
+  --theme-border-focus: #66E4C9;
+  
+  --theme-surface-primary: #161616;
+  --theme-surface-secondary: #1A1A1A;
+  --theme-surface-tertiary: #0A0707;
+  --theme-surface-hover: #202020;
+  --theme-surface-active: #2A2A2A;
+  
+  --theme-primary-light: #08101A;
+  --theme-primary-default: #295283;
+  --theme-primary-dark: #3A6B9C;
+  
+  --theme-secondary-light: #0C1A13;
+  --theme-secondary-default: #2E6F6F;
+  --theme-secondary-dark: #66E4C9;
+}
+
+/* Tailwind v4 Theme Configuration */
 @theme {
-  --color-background: oklch(1 0 0);
-  --color-foreground: oklch(0.145 0 0);
-  --color-card: oklch(1 0 0);
-  --color-card-foreground: oklch(0.145 0 0);
-  --color-popover: oklch(1 0 0);
-  --color-popover-foreground: oklch(0.145 0 0);
-  --color-primary: oklch(0.205 0 0);
-  --color-primary-foreground: oklch(0.985 0 0);
-  --color-secondary: oklch(0.97 0 0);
-  --color-secondary-foreground: oklch(0.205 0 0);
-  --color-muted: oklch(0.97 0 0);
-  --color-muted-foreground: oklch(0.556 0 0);
-  --color-accent: oklch(0.97 0 0);
-  --color-accent-foreground: oklch(0.205 0 0);
+  /* Base colors - keeping compatibility */
+  --color-background: var(--theme-background-primary);
+  --color-foreground: var(--theme-text-primary);
+  --color-card: var(--theme-background-card);
+  --color-card-foreground: var(--theme-text-primary);
+  --color-popover: var(--theme-background-popover);
+  --color-popover-foreground: var(--theme-text-primary);
+  --color-primary: var(--theme-primary-default);
+  --color-primary-foreground: var(--theme-text-inverse);
+  --color-secondary: var(--theme-secondary-default);
+  --color-secondary-foreground: var(--theme-text-primary);
+  --color-muted: var(--theme-surface-secondary);
+  --color-muted-foreground: var(--theme-text-muted);
+  --color-accent: var(--theme-text-accent);
+  --color-accent-foreground: var(--theme-text-inverse);
   --color-destructive: oklch(0.577 0.245 27.325);
-  --color-destructive-foreground: oklch(0.985 0 0);
-  --color-border: oklch(0.922 0 0);
-  --color-input: oklch(0.922 0 0);
-  --color-ring: oklch(0.708 0 0);
+  --color-destructive-foreground: var(--theme-text-inverse);
+  --color-border: var(--theme-border-light);
+  --color-input: var(--theme-border-light);
+  --color-ring: var(--theme-border-focus);
   --radius: 0.5rem;
 }
 
+/* Auto Dark Mode Preference */
 @media (prefers-color-scheme: dark) {
-  @theme {
-    --color-background: oklch(0.145 0 0);
-    --color-foreground: oklch(0.985 0 0);
-    --color-card: oklch(0.205 0 0);
-    --color-card-foreground: oklch(0.985 0 0);
-    --color-popover: oklch(0.205 0 0);
-    --color-popover-foreground: oklch(0.985 0 0);
-    --color-primary: oklch(0.922 0 0);
-    --color-primary-foreground: oklch(0.205 0 0);
-    --color-secondary: oklch(0.269 0 0);
-    --color-secondary-foreground: oklch(0.985 0 0);
-    --color-muted: oklch(0.269 0 0);
-    --color-muted-foreground: oklch(0.708 0 0);
-    --color-accent: oklch(0.269 0 0);
-    --color-accent-foreground: oklch(0.985 0 0);
-    --color-destructive: oklch(0.704 0.191 22.216);
-    --color-destructive-foreground: oklch(0.985 0 0);
-    --color-border: oklch(1 0 0 / 10%);
-    --color-input: oklch(1 0 0 / 15%);
-    --color-ring: oklch(0.556 0 0);
+  :root:not([data-theme]) {
+    --theme-background-primary: #030000;
+    --theme-background-secondary: #080806;
+    --theme-background-tertiary: #0A0707;
+    --theme-background-inverse: #FFFDFC;
+    --theme-background-overlay: rgba(0, 0, 0, 0.8);
+    --theme-background-card: #161616;
+    --theme-background-modal: #161616;
+    --theme-background-popover: #161616;
+    
+    --theme-text-primary: #3d78bd;
+    --theme-text-secondary: #2b9999;
+    --theme-text-tertiary: #9CA3AF;
+    --theme-text-inverse: #030000;
+    --theme-text-muted: #6B7280;
+    --theme-text-accent: #66E4C9;
+    
+    --theme-border-light: #21201C;
+    --theme-border-medium: #55514A;
+    --theme-border-dark: #81858C;
+    --theme-border-focus: #66E4C9;
+    
+    --theme-surface-primary: #161616;
+    --theme-surface-secondary: #1A1A1A;
+    --theme-surface-tertiary: #0A0707;
+    --theme-surface-hover: #202020;
+    --theme-surface-active: #2A2A2A;
   }
 }
 

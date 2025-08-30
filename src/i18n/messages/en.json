@@ -41,10 +41,17 @@
     "joinThousands": "Join thousands of healthcare providers who trust Cliniva to manage their operations efficiently.",
     "getStartedToday": "Get Started Today"
   },
+  "branding": {
+    "systemName": "Cliniva SYS",
+    "welcomeTitle": "Welcome to Cliniva System",
+    "welcomeSubtitle": "The future of medical center management starts here.."
+  },
   "auth": {
-    "loginTitle": "Sign in to your account",
+    "loginTitle": "Log in to Cliniva SYS",
+    "loginSubtitle": "Sign in to your account",
     "registerTitle": "Create your account",
     "email": "Email",
+    "username": "User Name",
     "password": "Password",
     "confirmPassword": "Confirm Password",
     "firstName": "First Name",
@@ -56,7 +63,10 @@
     "hasAccount": "Already have an account?",
     "signUp": "Sign up",
     "signIn": "Sign in",
-    "or": "or"
+    "logIn": "Log in",
+    "or": "or",
+    "enterUsername": "Enter username",
+    "enterPassword": "Enter password"
   },
   "errors": {
     "unauthorized": "Unauthorized",

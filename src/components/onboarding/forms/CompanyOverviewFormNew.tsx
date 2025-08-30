@@ -4,13 +4,12 @@ import React, { useState, useRef, useEffect } from "react";
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { ChevronLeft, ChevronDown, ChevronUp, Upload, Calendar } from "lucide-react"
+import { ChevronLeft, ChevronDown, ChevronUp, Upload, Calendar, Building, FileText, User, Hash, Target, Eye } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Card } from "@/components/ui/card"
 import { Sidebar } from "@/components/ui/sidebar"
-import { colors } from "@/lib/colors"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { toast } from 'sonner';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -302,37 +301,36 @@ export const CompanyOverviewFormNew: React.FC<CompanyOverviewFormProps> = ({
   };
 
   return (
-    <div className="min-h-screen flex" style={{ backgroundColor: colors.light.background.primary }}>
+    <div className="min-h-screen flex bg-background">
       {/* Sidebar */}
       <Sidebar currentStep={currentStep} currentSubStep={currentSubStep} />
 
       {/* Main Content */}
-      <div className="flex-1 p-8">
+      <div className="flex-1 p-8 bg-background">
         {/* Header */}
         <div className="mb-8">
           <button
-            className="flex items-center gap-2 text-sm mb-4 hover:opacity-80"
-            style={{ color: colors.light.text.secondary }}
+            className="flex items-center gap-2 text-sm mb-4 text-muted-foreground hover:text-primary transition-colors font-lato"
             onClick={onPrevious}
             type="button"
           >
             <ChevronLeft className="w-4 h-4" />
             Back to Choosing Plan Page
           </button>
-          <h1 className="text-2xl font-semibold mb-2" style={{ color: colors.light.text.primary }}>
+          <h1 className="text-2xl font-bold mb-2 text-primary font-lato">
             Fill in Company Details
           </h1>
-          <p style={{ color: colors.light.text.secondary }}>Company Overview</p>
+          <p className="text-muted-foreground font-lato">Company Overview</p>
         </div>
 
         {/* Form */}
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="max-w-4xl space-y-8">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="w-full space-y-8">
             {/* Logo and Company Name Row */}
-            <div className="grid grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               <div>
-                <label className="block text-sm font-medium mb-2" style={{ color: colors.light.text.primary }}>
-                  Logo<span style={{ color: colors.light.state.error }}>*</span>
+                <label className="block text-sm font-bold text-primary font-lato">
+                  Logo<span className="text-red-500 ml-1">*</span>
                 </label>
                 <FormField
                   control={form.control}
@@ -341,27 +339,23 @@ export const CompanyOverviewFormNew: React.FC<CompanyOverviewFormProps> = ({
                     <FormItem>
                       <FormControl>
                         <div
-                          className="border-2 border-dashed rounded-lg p-8 text-center cursor-pointer hover:opacity-80 transition-opacity"
-                          style={{
-                            borderColor: colors.light.border.secondary,
-                            backgroundColor: colors.light.background.tertiary,
-                          }}
+                          className="border-2 border-dashed border-border-light bg-surface-tertiary rounded-lg p-8 text-center cursor-pointer hover:bg-surface-hover transition-colors"
                           onClick={triggerFileUpload}
                         >
                           {field.value ? (
                             <div className="flex flex-col items-center">
                               <img src={field.value} alt="Logo" className="w-12 h-12 object-contain mb-2 rounded" />
-                              <p className="text-sm" style={{ color: colors.light.brand.secondary }}>
+                              <p className="text-sm text-primary-500">
                                 Logo uploaded successfully
                               </p>
                             </div>
                           ) : (
                             <>
-                              <Upload className="w-6 h-6 mx-auto mb-2" style={{ color: colors.light.text.secondary }} />
-                              <p className="text-sm mb-1" style={{ color: colors.light.brand.secondary }}>
+                              <Upload className="w-6 h-6 mx-auto mb-2 text-text-secondary" />
+                              <p className="text-sm mb-1 text-primary-500">
                                 {isUploading ? 'Uploading...' : 'Click or Drag file to this area to upload'}
                               </p>
-                              <p className="text-xs" style={{ color: colors.light.text.secondary }}>
+                              <p className="text-xs text-text-secondary">
                                 SVG, PNG, JPG or GIF , Maximum file size 2MB.
                               </p>
                             </>
@@ -383,10 +377,11 @@ export const CompanyOverviewFormNew: React.FC<CompanyOverviewFormProps> = ({
                   )}
                 />
               </div>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2" style={{ color: colors.light.text.primary }}>
-                    Company Name<span style={{ color: colors.light.state.error }}>*</span>
+              <div className="space-y-6">
+                {/* Company Name Field */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-bold text-primary font-lato">
+                    Company Name<span className="text-red-500 ml-1">*</span>
                   </label>
                   <FormField
                     control={form.control}
@@ -394,14 +389,20 @@ export const CompanyOverviewFormNew: React.FC<CompanyOverviewFormProps> = ({
                     render={({ field }) => (
                       <FormItem>
                         <FormControl>
-                          <Input
-                            {...field}
-                            placeholder="Enter Trade Name"
-                            className={`bg-white ${getValidationStatusClass(companyNameValidation)}`}
-                            style={{
-                              color: colors.light.text.secondary,
-                            }}
-                          />
+                          <div className="relative">
+                            <div className="absolute left-4 top-1/2 -translate-y-1/2 z-10">
+                              <Building className="h-[18px] w-[18px] text-primary" strokeWidth={1.5} />
+                            </div>
+                            <Input
+                              {...field}
+                              placeholder="Enter Trade Name"
+                              className={`h-[48px] pl-12 pr-4 text-base font-lato border-border bg-background text-foreground focus-visible:ring-ring focus-visible:border-ring shadow-sm placeholder:text-muted-foreground ${getValidationStatusClass(companyNameValidation)}`}
+                              style={{
+                                boxShadow: '0px 0px 1px 1px rgba(21, 197, 206, 0.16)',
+                                borderRadius: '8px'
+                              }}
+                            />
+                          </div>
                         </FormControl>
                         <FormMessage />
                         {/* Unique validation message */}
@@ -439,22 +440,32 @@ export const CompanyOverviewFormNew: React.FC<CompanyOverviewFormProps> = ({
                     )}
                   />
                 </div>
-                <div>
+
+                {/* Legal Name Field */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-bold text-primary font-lato">
+                    Legal Name
+                  </label>
                   <FormField
                     control={form.control}
                     name="legalName"
                     render={({ field }) => (
                       <FormItem>
                         <FormControl>
-                          <Input
-                            {...field}
-                            placeholder="Enter Legal Name"
-                            className="bg-white"
-                            style={{
-                              borderColor: colors.light.border.primary,
-                              color: colors.light.text.secondary,
-                            }}
-                          />
+                          <div className="relative">
+                            <div className="absolute left-4 top-1/2 -translate-y-1/2 z-10">
+                              <FileText className="h-[18px] w-[18px] text-primary" strokeWidth={1.5} />
+                            </div>
+                            <Input
+                              {...field}
+                              placeholder="Enter Legal Name"
+                              className="h-[48px] pl-12 pr-4 text-base font-lato border-border bg-background text-foreground focus-visible:ring-ring focus-visible:border-ring shadow-sm placeholder:text-muted-foreground"
+                              style={{
+                                boxShadow: '0px 0px 1px 1px rgba(21, 197, 206, 0.16)',
+                                borderRadius: '8px'
+                              }}
+                            />
+                          </div>
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -465,9 +476,9 @@ export const CompanyOverviewFormNew: React.FC<CompanyOverviewFormProps> = ({
             </div>
 
             {/* Year of Establishment */}
-            <div className="grid grid-cols-2 gap-8">
-              <div>
-                <label className="block text-sm font-medium mb-2" style={{ color: colors.light.text.primary }}>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div className="space-y-2">
+                <label className="block text-sm font-bold text-primary font-lato">
                   Year of Establishment
                 </label>
                 <FormField
@@ -477,6 +488,9 @@ export const CompanyOverviewFormNew: React.FC<CompanyOverviewFormProps> = ({
                     <FormItem>
                       <FormControl>
                         <div className="relative">
+                          <div className="absolute left-4 top-1/2 -translate-y-1/2 z-10">
+                            <Calendar className="h-[18px] w-[18px] text-primary" strokeWidth={1.5} />
+                          </div>
                           <Input
                             type="number"
                             value={field.value || ''}
@@ -486,16 +500,12 @@ export const CompanyOverviewFormNew: React.FC<CompanyOverviewFormProps> = ({
                               const value = e.target.value;
                               field.onChange(value ? parseInt(value) : undefined);
                             }}
-                            placeholder="Select Date"
-                            className="bg-white pr-10"
+                            placeholder="Enter Year"
+                            className="h-[48px] pl-12 pr-4 text-base font-lato border-border bg-background text-foreground focus-visible:ring-ring focus-visible:border-ring shadow-sm placeholder:text-muted-foreground"
                             style={{
-                              borderColor: colors.light.border.primary,
-                              color: colors.light.text.secondary,
+                              boxShadow: '0px 0px 1px 1px rgba(21, 197, 206, 0.16)',
+                              borderRadius: '8px'
                             }}
-                          />
-                          <Calendar
-                            className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2"
-                            style={{ color: colors.light.text.secondary }}
                           />
                         </div>
                       </FormControl>
@@ -507,52 +517,60 @@ export const CompanyOverviewFormNew: React.FC<CompanyOverviewFormProps> = ({
             </div>
 
             {/* Company Overview Section */}
-            <Card className="bg-white" style={{ borderColor: colors.light.border.primary }}>
+            <Card className="bg-background border-border shadow-sm">
               <div className="p-6">
                 <div 
                   className="flex items-center justify-between mb-6 cursor-pointer"
                   onClick={() => setIsOverviewOpen(!isOverviewOpen)}
                 >
-                  <h3 className="text-lg font-medium" style={{ color: colors.light.text.primary }}>
+                  <h3 className="text-lg font-bold text-primary font-lato">
                     Company Overview
                   </h3>
                   {isOverviewOpen ? (
-                    <ChevronUp className="w-5 h-5" style={{ color: colors.light.text.secondary }} />
+                    <ChevronUp className="w-5 h-5 text-primary" />
                   ) : (
-                    <ChevronDown className="w-5 h-5" style={{ color: colors.light.text.secondary }} />
+                    <ChevronDown className="w-5 h-5 text-primary" />
                   )}
                 </div>
 
                 {isOverviewOpen && (
                   <>
-                    <div className="grid grid-cols-2 gap-8 mb-6">
-                      <div>
-                        <label className="block text-sm font-medium mb-2" style={{ color: colors.light.text.primary }}>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-6">
+                      {/* Mission Field */}
+                      <div className="space-y-2">
+                        <label className="block text-sm font-bold text-primary font-lato">
                           Mission
                         </label>
-                                          <FormField
-                    control={form.control}
-                    name="mission"
+                        <FormField
+                          control={form.control}
+                          name="mission"
                           render={({ field }) => (
                             <FormItem>
                               <FormControl>
-                                <Textarea
-                                  {...field}
-                                  placeholder="Enter Mission"
-                                  className="bg-white min-h-[100px] resize-none"
-                                  style={{
-                                    borderColor: colors.light.border.primary,
-                                    color: colors.light.text.secondary,
-                                  }}
-                                />
+                                <div className="relative">
+                                  <div className="absolute left-4 top-4 z-10">
+                                    <Target className="h-[18px] w-[18px] text-primary" strokeWidth={1.5} />
+                                  </div>
+                                  <Textarea
+                                    {...field}
+                                    placeholder="Enter Mission"
+                                    className="min-h-[100px] pl-12 pr-4 pt-4 pb-4 text-base font-lato border-border bg-background text-foreground focus-visible:ring-ring focus-visible:border-ring shadow-sm placeholder:text-muted-foreground resize-none"
+                                    style={{
+                                      boxShadow: '0px 0px 1px 1px rgba(21, 197, 206, 0.16)',
+                                      borderRadius: '8px'
+                                    }}
+                                  />
+                                </div>
                               </FormControl>
                               <FormMessage />
                             </FormItem>
                           )}
                         />
                       </div>
-                      <div>
-                        <label className="block text-sm font-medium mb-2" style={{ color: colors.light.text.primary }}>
+
+                      {/* Vision Field */}
+                      <div className="space-y-2">
+                        <label className="block text-sm font-bold text-primary font-lato">
                           Vision
                         </label>
                         <FormField
@@ -561,15 +579,20 @@ export const CompanyOverviewFormNew: React.FC<CompanyOverviewFormProps> = ({
                           render={({ field }) => (
                             <FormItem>
                               <FormControl>
-                                <Textarea
-                                  {...field}
-                                  placeholder="Enter Vision"
-                                  className="bg-white min-h-[100px] resize-none"
-                                  style={{
-                                    borderColor: colors.light.border.primary,
-                                    color: colors.light.text.secondary,
-                                  }}
-                                />
+                                <div className="relative">
+                                  <div className="absolute left-4 top-4 z-10">
+                                    <Eye className="h-[18px] w-[18px] text-primary" strokeWidth={1.5} />
+                                  </div>
+                                  <Textarea
+                                    {...field}
+                                    placeholder="Enter Vision"
+                                    className="min-h-[100px] pl-12 pr-4 pt-4 pb-4 text-base font-lato border-border bg-background text-foreground focus-visible:ring-ring focus-visible:border-ring shadow-sm placeholder:text-muted-foreground resize-none"
+                                    style={{
+                                      boxShadow: '0px 0px 1px 1px rgba(21, 197, 206, 0.16)',
+                                      borderRadius: '8px'
+                                    }}
+                                  />
+                                </div>
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -578,9 +601,10 @@ export const CompanyOverviewFormNew: React.FC<CompanyOverviewFormProps> = ({
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-8">
-                      <div>
-                        <label className="block text-sm font-medium mb-2" style={{ color: colors.light.text.primary }}>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                      {/* CEO Name Field */}
+                      <div className="space-y-2">
+                        <label className="block text-sm font-bold text-primary font-lato">
                           CEO Name
                         </label>
                         <FormField
@@ -589,23 +613,30 @@ export const CompanyOverviewFormNew: React.FC<CompanyOverviewFormProps> = ({
                           render={({ field }) => (
                             <FormItem>
                               <FormControl>
-                                <Input
-                                  {...field}
-                                  placeholder="Enter CEO Name"
-                                  className="bg-white"
-                                  style={{
-                                    borderColor: colors.light.border.primary,
-                                    color: colors.light.text.secondary,
-                                  }}
-                                />
+                                <div className="relative">
+                                  <div className="absolute left-4 top-1/2 -translate-y-1/2 z-10">
+                                    <User className="h-[18px] w-[18px] text-primary" strokeWidth={1.5} />
+                                  </div>
+                                  <Input
+                                    {...field}
+                                    placeholder="Enter CEO Name"
+                                    className="h-[48px] pl-12 pr-4 text-base font-lato border-border bg-background text-foreground focus-visible:ring-ring focus-visible:border-ring shadow-sm placeholder:text-muted-foreground"
+                                    style={{
+                                      boxShadow: '0px 0px 1px 1px rgba(21, 197, 206, 0.16)',
+                                      borderRadius: '8px'
+                                    }}
+                                  />
+                                </div>
                               </FormControl>
                               <FormMessage />
                             </FormItem>
                           )}
                         />
                       </div>
-                      <div>
-                        <label className="block text-sm font-medium mb-2" style={{ color: colors.light.text.primary }}>
+
+                      {/* Registration Number Field */}
+                      <div className="space-y-2">
+                        <label className="block text-sm font-bold text-primary font-lato">
                           Registration Number
                         </label>
                         <FormField
@@ -614,15 +645,20 @@ export const CompanyOverviewFormNew: React.FC<CompanyOverviewFormProps> = ({
                           render={({ field }) => (
                             <FormItem>
                               <FormControl>
-                                <Input
-                                  {...field}
-                                  placeholder="Enter Registration Number"
-                                  className="bg-white"
-                                  style={{
-                                    borderColor: colors.light.border.primary,
-                                    color: colors.light.text.secondary,
-                                  }}
-                                />
+                                <div className="relative">
+                                  <div className="absolute left-4 top-1/2 -translate-y-1/2 z-10">
+                                    <Hash className="h-[18px] w-[18px] text-primary" strokeWidth={1.5} />
+                                  </div>
+                                  <Input
+                                    {...field}
+                                    placeholder="Enter Registration Number"
+                                    className="h-[48px] pl-12 pr-4 text-base font-lato border-border bg-background text-foreground focus-visible:ring-ring focus-visible:border-ring shadow-sm placeholder:text-muted-foreground"
+                                    style={{
+                                      boxShadow: '0px 0px 1px 1px rgba(21, 197, 206, 0.16)',
+                                      borderRadius: '8px'
+                                    }}
+                                  />
+                                </div>
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -636,17 +672,13 @@ export const CompanyOverviewFormNew: React.FC<CompanyOverviewFormProps> = ({
             </Card>
 
             {/* Bottom Navigation */}
-            <div className="flex justify-between items-center mt-12">
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-12">
               <Button
                 type="button"
                 variant="outline"
                 onClick={onPrevious}
                 disabled={!onPrevious}
-                className="px-8 py-2 bg-transparent hover:opacity-80"
-                style={{
-                  borderColor: colors.light.border.secondary,
-                  color: colors.light.text.secondary,
-                }}
+                className="w-full sm:w-auto h-[48px] px-8 font-lato text-primary border-border hover:bg-muted"
               >
                 <ChevronLeft className="w-4 h-4 mr-2" />
                 Previous
@@ -654,14 +686,11 @@ export const CompanyOverviewFormNew: React.FC<CompanyOverviewFormProps> = ({
               <Button
                 type="submit"
                 disabled={isSubmitting}
-                className="px-8 py-2 text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
-                style={{
-                  backgroundColor: colors.light.brand.primary,
-                }}
+                className="w-full sm:w-auto h-[48px] px-8 bg-primary hover:bg-primary/90 text-primary-foreground font-lato disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? (
                   <>
-                    <div className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <div className="w-4 h-4 mr-2 border-2 border-current border-t-transparent rounded-full animate-spin" />
                     Saving...
                   </>
                 ) : (

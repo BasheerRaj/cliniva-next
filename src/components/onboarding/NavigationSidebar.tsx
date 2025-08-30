@@ -2,6 +2,7 @@
 
 import { UserCircleIcon } from "lucide-react";
 import React from "react";
+import { useClivinaTheme } from "@/hooks/useClivinaTheme";
 
 interface StepperItem {
   text: string;
@@ -45,9 +46,10 @@ const PLAN_STEP_CONFIGS = {
       items: [
         { text: "Complex Overview", subStep: "overview" },
         { text: "Contact Details", subStep: "contact" },
+        { text: "Legal Details", subStep: "legal" },
         { text: "Working Schedule", subStep: "schedule" },
       ],
-      dots: 3,
+      dots: 4,
     },
     {
       number: 3,
@@ -107,6 +109,7 @@ export const NavigationSidebar = ({
   planType = 'company',
   completedSteps = []
 }: NavigationSidebarProps): React.JSX.Element => {
+  const { colors } = useClivinaTheme();
   
   const stepperData = PLAN_STEP_CONFIGS[planType] || PLAN_STEP_CONFIGS.company;
 
@@ -150,101 +153,122 @@ export const NavigationSidebar = ({
   const dynamicStepperData = generateStepperData();
 
   return (
-    <nav className="w-[280px] bg-white border-r border-gray-200 min-h-screen">
-      <header className="flex flex-col items-start gap-2.5 px-6 py-4 border-b border-gray-200">
+    <nav className="w-[280px] bg-card border-r border-border min-h-screen">
+      <header className="flex flex-col items-start gap-2.5 px-6 py-4 border-b border-border">
         <div className="flex items-center gap-2">
           <img
-            className="w-8 h-8"
+            className="h-8 w-auto"
             alt="Cliniva Logo"
-            src="/symbol.svg"
+            src="/assets/cliniva-logo.svg"
           />
-          <div className="font-semibold text-[#2a2b2a] text-xl">
-            Cliniva
-          </div>
         </div>
       </header>
 
       <div className="flex flex-col items-start gap-6 px-6 py-8">
         <div className="flex items-center gap-3">
-          <UserCircleIcon className="w-6 h-6 text-[#69a3e9]" />
-          <div className="font-semibold text-gray-800 text-sm">
+          <UserCircleIcon className="w-6 h-6" style={{ color: colors.primary.default }} />
+          <div className="font-semibold text-foreground text-sm">
             Account Setup
           </div>
         </div>
 
         <div className="flex items-start gap-4 w-full">
-          {/* Progress Line */}
-          <div className="flex flex-col w-8 items-center gap-6 pt-2">
-            {dynamicStepperData.map((step, stepIndex) => (
-              <div key={step.number} className="flex flex-col items-center gap-3">
-                {/* Step Circle */}
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                  step.isCompleted 
-                    ? "bg-green-500 text-white" 
-                    : step.isActive 
-                      ? "bg-[#69a3e9] text-white" 
-                      : "bg-gray-200 text-gray-600"
-                }`}>
-                  {step.isCompleted ? "✓" : step.number}
-                </div>
-
-                {/* Dots between steps */}
-                {stepIndex < dynamicStepperData.length - 1 && (
-                  <div className="flex flex-col items-center gap-2">
-                    {Array.from({ length: step.dots }).map((_, dotIndex) => (
-                      <div
-                        key={dotIndex}
-                        className={`w-2 h-2 rounded-full ${
-                          step.isCompleted 
-                            ? "bg-green-300" 
-                            : (dotIndex === 0 && step.isActive) 
-                              ? "bg-[#69a3e9]" 
-                              : "bg-gray-300"
-                        }`}
-                      />
-                    ))}
+          {/* Vertical Progress Bar (Bill) */}
+          <div className="flex flex-col items-center pt-4">
+            <div 
+              className="flex flex-col items-center px-3 py-4 rounded-full"
+              style={{ backgroundColor: colors.background.secondary }}
+            >
+              {dynamicStepperData.map((step, stepIndex) => (
+                <div key={step.number} className="flex flex-col items-center">
+                  {/* Step Number Circle */}
+                  <div 
+                    className="w-6 h-6 rounded-full flex items-center justify-center text-sm font-medium"
+                    style={{
+                      backgroundColor: step.isCompleted ? colors.primary.default : step.isActive ? colors.primary.default : colors.text.tertiary,
+                      color: '#FFFFFF',
+                      marginBottom: '12px'
+                    }}
+                  >
+                    {step.isCompleted ? "✓" : step.number}
                   </div>
-                )}
-              </div>
-            ))}
+                  
+                  {/* Connecting Dots */}
+                  {step.items.map((_, itemIndex) => (
+                    <div
+                      key={itemIndex}
+                      className="w-2.5 h-2.5 rounded-full"
+                      style={{
+                        backgroundColor: step.isCompleted ? colors.primary.default : (step.isActive && itemIndex === 0) ? colors.primary.default : colors.text.tertiary,
+                        marginBottom: itemIndex < step.items.length - 1 ? '24px' : stepIndex < dynamicStepperData.length - 1 ? '32px' : '0px'
+                      }}
+                    />
+                  ))}
+                </div>
+              ))}
+            </div>
           </div>
 
           {/* Step Content */}
-          <div className="flex flex-col gap-8 flex-1">
-            {dynamicStepperData.map((step) => (
-              <section key={step.number} className="flex flex-col gap-3">
-                <h3 className="font-medium text-gray-800 text-sm">
-                  {step.title}
-                </h3>
-                <div className="flex flex-col gap-2">
-                  {step.items.map((item, itemIndex) => (
-                    <div key={itemIndex} className="flex items-center gap-3">
-                      <div className={`text-sm ${
-                        item.isCompleted 
-                          ? "text-green-600 font-medium" 
-                          : item.isActive 
-                            ? "text-[#69a3e9] font-semibold" 
-                            : "text-gray-500"
-                      }`}>
-                        {item.isCompleted && "✓ "}
+          <div className="flex flex-col gap-6 flex-1">
+            {dynamicStepperData.map((step, stepIndex) => (
+              <div key={step.number} className={stepIndex < dynamicStepperData.length - 1 ? "mb-6" : ""}>
+                {/* Step Title Row */}
+                <div className="flex items-center" style={{ height: '24px' }}>
+                  <h3 
+                    className="font-medium text-sm"
+                    style={{ color: step.isActive || step.isCompleted ? colors.text.primary : colors.text.secondary }}
+                  >
+                    Fill in {step.title}
+                  </h3>
+                </div>
+          
+                {/* Step Items */}
+                <div className="flex flex-col gap-6 pt-3">
+                  {step.items.map((item) => (
+                    <div key={item.subStep} className="flex items-center" style={{ height: '10px' }}>
+                      <span 
+                        className="text-xs"
+                        style={{
+                          color: item.isCompleted ? colors.primary.default : item.isActive ? colors.primary.default : colors.text.secondary,
+                          fontWeight: item.isActive ? '600' : '400'
+                        }}
+                      >
                         {item.text}
-                      </div>
+                      </span>
                     </div>
                   ))}
                 </div>
-              </section>
+              </div>
             ))}
           </div>
         </div>
       </div>
 
       {/* Plan Type Indicator */}
-      <div className="absolute bottom-6 left-6 bg-blue-50 rounded-lg shadow-sm p-4 border border-blue-200">
-        <div className="text-xs text-blue-600 font-medium">Plan Type</div>
-        <div className="text-sm font-semibold capitalize text-blue-800">
+      <div 
+        className="absolute bottom-6 left-6 rounded-lg shadow-sm p-4 border"
+        style={{ 
+          backgroundColor: colors.background.secondary,
+          borderColor: colors.primary.light
+        }}
+      >
+        <div 
+          className="text-xs font-medium"
+          style={{ color: colors.primary.default }}
+        >
+          Plan Type
+        </div>
+        <div 
+          className="text-sm font-semibold capitalize"
+          style={{ color: colors.text.primary }}
+        >
           {planType}
         </div>
-        <div className="text-xs text-blue-500 mt-1">
+        <div 
+          className="text-xs mt-1"
+          style={{ color: colors.text.secondary }}
+        >
           Step {currentStep} of {dynamicStepperData.length}
         </div>
       </div>

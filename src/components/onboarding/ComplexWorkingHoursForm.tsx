@@ -4,9 +4,12 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChevronLeft, Clock, Calendar } from "lucide-react"
 import { toast } from 'sonner'
 import { stepApi } from '@/api/validationApi'
+import { useClivinaTheme } from "@/hooks/useClivinaTheme"
+
 
 interface ComplexWorkingHoursFormProps {
   onPrevious: () => void
@@ -170,206 +173,250 @@ export default function ComplexWorkingHoursForm({ onPrevious, onNext, initialDat
     sunday: "Sunday"
   }
 
+  const { colors } = useClivinaTheme();
+
   return (
-    <div className="min-h-screen bg-[#fafaf8] p-8">
-      {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center gap-2 text-[#717680] text-sm mb-2 cursor-pointer" onClick={onPrevious}>
-          <ChevronLeft className="w-4 h-4" />
-          <span>Back to Legal Details</span>
-        </div>
-        <h1 className="text-2xl font-semibold text-[#2a2b2a] mb-1">Working Schedule</h1>
-        <p className="text-[#717680]">Set your working days and hours</p>
-      </div>
-
-      {/* Form */}
-      <div className="max-w-4xl space-y-8">
-        {/* Quick Actions */}
-        <div className="bg-white border border-[#e4e2dd] rounded-lg p-6">
-          <h3 className="text-lg font-medium text-[#2a2b2a] mb-4 flex items-center">
-            <Clock className="w-5 h-5 mr-2" />
-            Quick Setup
-          </h3>
-          <div className="flex flex-wrap gap-4 mb-4">
-            <Button
-              variant="outline"
-              onClick={() => toggleAllDays(true)}
-              className="border-[#e4e2dd] text-[#717680] hover:bg-[#f6f6f7]"
-            >
-              Select All Days
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => toggleAllDays(false)}
-              className="border-[#e4e2dd] text-[#717680] hover:bg-[#f6f6f7]"
-            >
-              Clear All Days
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => setAllTimes("09:00", "17:00")}
-              className="border-[#e4e2dd] text-[#717680] hover:bg-[#f6f6f7]"
-            >
-              Set 9 AM - 5 PM
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => setAllTimes("08:00", "18:00")}
-              className="border-[#e4e2dd] text-[#717680] hover:bg-[#f6f6f7]"
-            >
-              Set 8 AM - 6 PM
-            </Button>
-          </div>
-          <div className="flex flex-wrap gap-4">
-            <Button
-              variant="outline"
-              onClick={() => setAllBreakTimes("12:00", "13:00")}
-              className="border-[#e4e2dd] text-[#717680] hover:bg-[#f6f6f7]"
-            >
-              Set Break 12 PM - 1 PM
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => setAllBreakTimes("13:00", "14:00")}
-              className="border-[#e4e2dd] text-[#717680] hover:bg-[#f6f6f7]"
-            >
-              Set Break 1 PM - 2 PM
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => setAllBreakTimes("", "")}
-              className="border-[#e4e2dd] text-[#717680] hover:bg-[#f6f6f7]"
-            >
-              No Break Time
-            </Button>
-          </div>
+    <div className="min-h-screen bg-background">
+      {/* Main Content */}
+      <div className="p-8 bg-background">
+        {/* Header */}
+        <div className="mb-8">
+          <button
+            className="flex items-center gap-2 text-sm mb-4 text-muted-foreground hover:text-primary transition-colors font-lato"
+            onClick={onPrevious}
+            type="button"
+          >
+            <ChevronLeft className="w-4 h-4" />
+            Back to Legal Details
+          </button>
+          <h1 className="text-2xl font-bold mb-2 text-primary font-lato">
+            Working Schedule
+          </h1>
+          <p className="text-muted-foreground font-lato">
+            Set your working days and hours
+          </p>
         </div>
 
-        {/* Schedule Grid */}
-        <div className="bg-white border border-[#e4e2dd] rounded-lg overflow-hidden">
-          <div className="p-6 border-b border-[#e4e2dd]">
-            <h3 className="text-lg font-medium text-[#2a2b2a] flex items-center">
-              <Calendar className="w-5 h-5 mr-2" />
-              Weekly Schedule
-            </h3>
-          </div>
+        {/* Form */}
+        <div className="space-y-8">
+          {/* Quick Actions */}
+          <Card className="bg-card border-border shadow-sm">
+            <CardHeader>
+              <CardTitle className="flex items-center text-lg text-primary font-lato">
+                <Clock className="w-5 h-5 mr-2 text-primary" />
+                Quick Setup
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex flex-wrap gap-4">
+                <Button
+                  variant="outline"
+                  onClick={() => toggleAllDays(true)}
+                  className="border-border text-muted-foreground hover:bg-accent"
+                >
+                  Select All Days
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => toggleAllDays(false)}
+                  className="border-border text-muted-foreground hover:bg-accent"
+                >
+                  Clear All Days
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setAllTimes("09:00", "17:00")}
+                  className="border-border text-muted-foreground hover:bg-accent"
+                >
+                  Set 9 AM - 5 PM
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setAllTimes("08:00", "18:00")}
+                  className="border-border text-muted-foreground hover:bg-accent"
+                >
+                  Set 8 AM - 6 PM
+                </Button>
+              </div>
+              <div className="flex flex-wrap gap-4">
+                <Button
+                  variant="outline"
+                  onClick={() => setAllBreakTimes("12:00", "13:00")}
+                  className="border-border text-muted-foreground hover:bg-accent"
+                >
+                  Set Break 12 PM - 1 PM
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setAllBreakTimes("13:00", "14:00")}
+                  className="border-border text-muted-foreground hover:bg-accent"
+                >
+                  Set Break 1 PM - 2 PM
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setAllBreakTimes("", "")}
+                  className="border-border text-muted-foreground hover:bg-accent"
+                >
+                  No Break Time
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
 
-          <div className="divide-y divide-[#e4e2dd]">
-            {schedule.map((daySchedule, index) => (
-              <div key={daySchedule.dayOfWeek} className="p-6">
-                <div className="grid grid-cols-6 gap-6 items-center">
-                  {/* Day and Checkbox */}
-                  <div className="flex items-center space-x-3">
-                    <Checkbox
-                      checked={daySchedule.isWorkingDay}
-                      onCheckedChange={(checked) => updateDaySchedule(index, "isWorkingDay", checked as boolean)}
-                      className="data-[state=checked]:bg-[#00b48d] data-[state=checked]:border-[#00b48d]"
-                    />
-                    <label className="text-sm font-medium text-[#2a2b2a] min-w-[80px]">
-                      {dayDisplayNames[daySchedule.dayOfWeek]}
-                    </label>
-                  </div>
+          {/* Schedule Grid */}
+          <Card className="bg-card border-border shadow-sm overflow-hidden">
+            <CardHeader className="border-b border-border">
+              <CardTitle className="flex items-center text-lg text-primary font-lato">
+                <Calendar className="w-5 h-5 mr-2 text-primary" />
+                Weekly Schedule
+              </CardTitle>
+            </CardHeader>
 
-                  {/* Opening Time */}
-                  <div>
-                    <label className="block text-xs font-medium text-[#717680] mb-1">Opening Time</label>
-                    <Input
-                      type="time"
-                      value={daySchedule.openingTime || ''}
-                      onChange={(e) => updateDaySchedule(index, "openingTime", e.target.value)}
-                      disabled={!daySchedule.isWorkingDay}
-                      className="bg-white border-[#e4e2dd] text-[#717680] disabled:bg-[#f6f6f7] disabled:text-[#b8b1a9]"
-                    />
-                  </div>
+            <CardContent className="p-0">
+              <div className="divide-y divide-border">
+                {schedule.map((daySchedule, index) => (
+                  <div key={daySchedule.dayOfWeek} className="p-6">
+                    <div className="grid grid-cols-6 gap-6 items-center">
+                      {/* Day and Checkbox */}
+                      <div className="flex items-center space-x-3">
+                        <Checkbox
+                          checked={daySchedule.isWorkingDay}
+                          onCheckedChange={(checked) => updateDaySchedule(index, "isWorkingDay", checked as boolean)}
+                          className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                        />
+                        <label className="text-sm font-medium text-foreground min-w-[80px] font-lato">
+                          {dayDisplayNames[daySchedule.dayOfWeek]}
+                        </label>
+                      </div>
 
-                  {/* Closing Time */}
-                  <div>
-                    <label className="block text-xs font-medium text-[#717680] mb-1">Closing Time</label>
-                    <Input
-                      type="time"
-                      value={daySchedule.closingTime || ''}
-                      onChange={(e) => updateDaySchedule(index, "closingTime", e.target.value)}
-                      disabled={!daySchedule.isWorkingDay}
-                      className="bg-white border-[#e4e2dd] text-[#717680] disabled:bg-[#f6f6f7] disabled:text-[#b8b1a9]"
-                    />
-                  </div>
+                      {/* Opening Time */}
+                      <div>
+                        <label className="block text-xs font-medium text-muted-foreground mb-1 font-lato">
+                          Opening Time
+                        </label>
+                        <Input
+                          type="time"
+                          value={daySchedule.openingTime || ''}
+                          onChange={(e) => updateDaySchedule(index, "openingTime", e.target.value)}
+                          disabled={!daySchedule.isWorkingDay}
+                          className="bg-background border-border text-foreground disabled:bg-muted disabled:text-muted-foreground"
+                        />
+                      </div>
 
-                  {/* Break Start Time */}
-                  <div>
-                    <label className="block text-xs font-medium text-[#717680] mb-1">Break Start</label>
-                    <Input
-                      type="time"
-                      value={daySchedule.breakStartTime || ''}
-                      onChange={(e) => updateDaySchedule(index, "breakStartTime", e.target.value)}
-                      disabled={!daySchedule.isWorkingDay}
-                      className="bg-white border-[#e4e2dd] text-[#717680] disabled:bg-[#f6f6f7] disabled:text-[#b8b1a9]"
-                    />
-                  </div>
+                      {/* Closing Time */}
+                      <div>
+                        <label className="block text-xs font-medium text-muted-foreground mb-1 font-lato">
+                          Closing Time
+                        </label>
+                        <Input
+                          type="time"
+                          value={daySchedule.closingTime || ''}
+                          onChange={(e) => updateDaySchedule(index, "closingTime", e.target.value)}
+                          disabled={!daySchedule.isWorkingDay}
+                          className="bg-background border-border text-foreground disabled:bg-muted disabled:text-muted-foreground"
+                        />
+                      </div>
 
-                  {/* Break End Time */}
-                  <div>
-                    <label className="block text-xs font-medium text-[#717680] mb-1">Break End</label>
-                    <Input
-                      type="time"
-                      value={daySchedule.breakEndTime || ''}
-                      onChange={(e) => updateDaySchedule(index, "breakEndTime", e.target.value)}
-                      disabled={!daySchedule.isWorkingDay}
-                      className="bg-white border-[#e4e2dd] text-[#717680] disabled:bg-[#f6f6f7] disabled:text-[#b8b1a9]"
-                    />
-                  </div>
+                      {/* Break Start Time */}
+                      <div>
+                        <label className="block text-xs font-medium text-muted-foreground mb-1 font-lato">
+                          Break Start
+                        </label>
+                        <Input
+                          type="time"
+                          value={daySchedule.breakStartTime || ''}
+                          onChange={(e) => updateDaySchedule(index, "breakStartTime", e.target.value)}
+                          disabled={!daySchedule.isWorkingDay}
+                          className="bg-background border-border text-foreground disabled:bg-muted disabled:text-muted-foreground"
+                        />
+                      </div>
 
-                  {/* Status */}
-                  <div className="text-right">
-                    <span
-                      className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
-                        daySchedule.isWorkingDay ? "bg-[#e2f6ec] text-[#00b48d]" : "bg-[#f6f6f7] text-[#717680]"
-                      }`}
-                    >
-                      {daySchedule.isWorkingDay ? "Working Day" : "Day Off"}
-                    </span>
+                      {/* Break End Time */}
+                      <div>
+                        <label className="block text-xs font-medium text-muted-foreground mb-1 font-lato">
+                          Break End
+                        </label>
+                        <Input
+                          type="time"
+                          value={daySchedule.breakEndTime || ''}
+                          onChange={(e) => updateDaySchedule(index, "breakEndTime", e.target.value)}
+                          disabled={!daySchedule.isWorkingDay}
+                          className="bg-background border-border text-foreground disabled:bg-muted disabled:text-muted-foreground"
+                        />
+                      </div>
+
+                      {/* Status */}
+                      <div className="text-right">
+                        <span
+                          className={`inline-flex px-2 py-1 rounded-full text-xs font-medium font-lato ${
+                            daySchedule.isWorkingDay 
+                              ? "bg-primary/10 text-primary" 
+                              : "bg-muted text-muted-foreground"
+                          }`}
+                        >
+                          {daySchedule.isWorkingDay ? "Working Day" : "Day Off"}
+                        </span>
+                      </div>
+                    </div>
                   </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Schedule Summary */}
+          <Card className="bg-primary/5 border-primary/20 shadow-sm">
+            <CardContent className="p-6">
+              <div className="flex items-start gap-3">
+                <Clock className="w-5 h-5 mt-0.5 text-primary" />
+                <div>
+                  <h3 className="text-sm font-medium text-primary mb-2 font-lato">
+                    Schedule Summary
+                  </h3>
+                  <p className="text-xs text-muted-foreground leading-relaxed font-lato">
+                    Working Days: {schedule.filter((day) => day.isWorkingDay).length} days per week
+                    <br />
+                    This schedule will be used for appointment booking and availability display for your complex.
+                    <br />
+                    Break times are optional and can be left empty if not applicable.
+                  </p>
                 </div>
               </div>
-            ))}
-          </div>
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Schedule Summary */}
-        <div className="bg-[#e2f6ec] border border-[#00b48d] rounded-lg p-6">
-          <div className="flex items-start gap-3">
-            <Clock className="w-5 h-5 text-[#00b48d] mt-0.5" />
-            <div>
-              <h3 className="text-sm font-medium text-[#2a2b2a] mb-2">Schedule Summary</h3>
-              <p className="text-xs text-[#717680] leading-relaxed">
-                Working Days: {schedule.filter((day) => day.isWorkingDay).length} days per week
-                <br />
-                This schedule will be used for appointment booking and availability display for your complex.
-                <br />
-                Break times are optional and can be left empty if not applicable.
-              </p>
-            </div>
-          </div>
+        {/* Bottom Navigation */}
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-12">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onPrevious}
+            className="w-full sm:w-auto h-[48px] px-8 font-lato text-primary border-border hover:bg-muted"
+          >
+            <ChevronLeft className="w-4 h-4 mr-2" />
+            Previous
+          </Button>
+          <Button
+            type="button"
+            onClick={handleComplete}
+            disabled={isLoading}
+            className="w-full sm:w-auto h-[48px] px-8 bg-primary hover:bg-primary/90 text-primary-foreground font-lato disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isLoading ? (
+              <>
+                <div className="w-4 h-4 mr-2 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                Saving...
+              </>
+            ) : (
+              <>
+                Complete Setup
+                <ChevronLeft className="w-4 h-4 ml-2 rotate-180" />
+              </>
+            )}
+          </Button>
         </div>
-      </div>
-
-      {/* Bottom Navigation */}
-      <div className="fixed bottom-8 right-8 flex gap-4">
-        <Button
-          variant="outline"
-          onClick={onPrevious}
-          className="px-6 py-2 border-[#e4e2dd] text-[#717680] hover:bg-[#f6f6f7] bg-transparent"
-        >
-          <ChevronLeft className="w-4 h-4 mr-2" />
-          Previous
-        </Button>
-        <Button 
-          onClick={handleComplete} 
-          disabled={isLoading}
-          className="px-6 py-2 bg-[#00b48d] hover:bg-[#00a07a] text-white"
-        >
-          {isLoading ? 'Saving...' : 'Complete Setup'}
-          <ChevronLeft className="w-4 h-4 ml-2 rotate-180" />
-        </Button>
       </div>
     </div>
   )

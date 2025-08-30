@@ -1,4 +1,4 @@
-import { colors } from "@/lib/colors"
+import { useClivinaTheme } from "@/hooks/useClivinaTheme"
 
 interface SidebarProps {
   className?: string
@@ -8,6 +8,8 @@ interface SidebarProps {
 }
 
 export function Sidebar({ className, currentStep = 1, currentSubStep = 'overview', planType = 'company' }: SidebarProps) {
+  const { colors, isDark } = useClivinaTheme()
+
   const getStepStatus = (step: number) => {
     if (step < currentStep) return 'completed'
     if (step === currentStep) return 'active'
@@ -26,34 +28,33 @@ export function Sidebar({ className, currentStep = 1, currentSubStep = 'overview
 
   const getStepColor = (status: string) => {
     switch (status) {
-      case 'completed': return colors.light.state.success
-      case 'active': return colors.light.brand.primary
-      default: return colors.light.state.inactive
+      case 'completed': return '#22c55e' // Success green
+      case 'active': return colors.primary.default
+      default: return colors.text.tertiary
     }
   }
 
   const getTextColor = (status: string) => {
     switch (status) {
-      case 'completed': return colors.light.state.success
-      case 'active': return colors.light.brand.primary
-      default: return colors.light.text.secondary
+      case 'completed': return '#22c55e' // Success green
+      case 'active': return colors.primary.default
+      default: return colors.text.secondary
     }
   }
 
   return (
     <div
-      className={`w-80 bg-white border-r p-6 ${className || ""}`}
-      style={{ borderColor: colors.light.border.primary }}
+      className={`w-80 bg-card border-r border-border p-6 ${className || ""}`}
     >
       {/* Logo */}
       <div className="flex items-center gap-2 mb-8">
         <div
           className="w-8 h-8 rounded-lg flex items-center justify-center"
-          style={{ backgroundColor: colors.light.brand.secondary }}
+          style={{ backgroundColor: colors.secondary.default }}
         >
-          <div className="w-4 h-4 bg-white rounded-sm"></div>
+          <div className="w-4 h-4 bg-background rounded-sm"></div>
         </div>
-        <span className="font-semibold text-lg" style={{ color: colors.light.text.primary }}>
+        <span className="font-semibold text-lg text-foreground">
           Cliniva SYS
         </span>
       </div>
@@ -162,7 +163,7 @@ export function Sidebar({ className, currentStep = 1, currentSubStep = 'overview
                 className="text-sm" 
                 style={{ color: getTextColor(getSubStepStatus(2, 'schedule')) }}
               >
-                Working Schedule
+                Working Scheduleiii
               </span>
             </div>
           </div>

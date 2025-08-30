@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Card } from "@/components/ui/card"
-import { Sidebar } from "@/components/ui/sidebar"
+
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { toast } from 'sonner';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -303,12 +303,9 @@ export const CompanyOverviewFormNew: React.FC<CompanyOverviewFormProps> = ({
   };
 
   return (
-    <div className="min-h-screen flex bg-background">
-      {/* Sidebar */}
-      <Sidebar currentStep={currentStep} currentSubStep={currentSubStep} />
-
+    <div className="min-h-screen bg-background">
       {/* Main Content */}
-      <div className="flex-1 p-8 bg-background">
+      <div className="p-8 bg-background">
         {/* Header */}
         <div className="mb-8">
           <button

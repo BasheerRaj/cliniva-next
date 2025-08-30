@@ -246,7 +246,7 @@ export const ComplexContactForm: React.FC<ComplexContactFormProps> = ({
       {/* Sidebar would go here if needed */}
       <div className="flex-1 p-8 bg-background">
         {/* Header */}
-        <div className="mb-8">
+      <div className="mb-8">
           <button
             className="flex items-center gap-2 text-sm mb-4 text-muted-foreground hover:text-primary transition-colors font-lato"
             onClick={onPrevious}
@@ -256,17 +256,17 @@ export const ComplexContactForm: React.FC<ComplexContactFormProps> = ({
             Back to Previous Step
           </button>
           <h1 className="text-2xl font-bold mb-2 text-primary font-lato">
-            Complex Contact Information
-          </h1>
+          Complex Contact Information
+        </h1>
           <p className="text-muted-foreground font-lato">
-            Provide contact details for your medical complex
-          </p>
-        </div>
+          Provide contact details for your medical complex
+        </p>
+      </div>
 
-        <Form {...form}>
+      <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="w-full space-y-8">
-            
-            {/* Basic Contact Information */}
+          
+          {/* Basic Contact Information */}
             <CollapsibleCard
               title="Basic Contact"
               isOpen={isContactExpanded}
@@ -377,20 +377,20 @@ export const ComplexContactForm: React.FC<ComplexContactFormProps> = ({
                     <label className="block text-sm font-bold text-primary font-lato">
                       Email Address
                     </label>
-                    <FormField
-                      control={form.control}
-                      name="email"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormControl>
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
                             <div className="relative">
                               <div className="absolute left-4 top-1/2 -translate-y-1/2 z-10">
                                 <Mail className="h-[18px] w-[18px] text-primary" strokeWidth={1.5} />
                               </div>
-                              <Input
-                                {...field}
-                                type="email"
-                                placeholder="complex@example.com"
+                          <Input
+                            {...field}
+                            type="email"
+                            placeholder="complex@example.com"
                                 className="h-[48px] pl-12 pr-4 text-base font-lato border-border bg-background text-foreground focus-visible:ring-ring focus-visible:border-ring shadow-sm placeholder:text-muted-foreground"
                                 style={{
                                   boxShadow: '0px 0px 1px 1px rgba(21, 197, 206, 0.16)',
@@ -399,15 +399,15 @@ export const ComplexContactForm: React.FC<ComplexContactFormProps> = ({
                                 disabled={isSubmitting || emailValidation.isChecking}
                               />
                             </div>
-                          </FormControl>
-                          <FormMessage />
+                        </FormControl>
+                        <FormMessage />
                           <ValidationMessage validation={emailValidation} />
-                        </FormItem>
-                      )}
-                    />
+                      </FormItem>
+                    )}
+                  />
                   </div>
 
-              </div>
+                </div>
             </CollapsibleCard>
 
             {/* Address Information */}
@@ -423,7 +423,7 @@ export const ComplexContactForm: React.FC<ComplexContactFormProps> = ({
                     control={form.control}
                     name="address.street"
                     label="Street Address"
-                    placeholder="123 Medical Center Drive"
+                            placeholder="123 Medical Center Drive"
                     icon={Home}
                     disabled={isSubmitting}
                   />
@@ -434,7 +434,7 @@ export const ComplexContactForm: React.FC<ComplexContactFormProps> = ({
                       control={form.control}
                       name="address.city"
                       label="City"
-                      placeholder="City name"
+                              placeholder="City name"
                       icon={MapPinIcon}
                       disabled={isSubmitting}
                     />
@@ -444,7 +444,7 @@ export const ComplexContactForm: React.FC<ComplexContactFormProps> = ({
                       control={form.control}
                       name="address.state"
                       label="State/Province"
-                      placeholder="State or Province"
+                              placeholder="State or Province"
                       icon={MapPinIcon}
                       disabled={isSubmitting}
                     />
@@ -456,7 +456,7 @@ export const ComplexContactForm: React.FC<ComplexContactFormProps> = ({
                       control={form.control}
                       name="address.postalCode"
                       label="Postal Code"
-                      placeholder="12345"
+                              placeholder="12345"
                       icon={Hash}
                       disabled={isSubmitting}
                     />
@@ -466,7 +466,7 @@ export const ComplexContactForm: React.FC<ComplexContactFormProps> = ({
                       control={form.control}
                       name="address.country"
                       label="Country"
-                      placeholder="Country name"
+                              placeholder="Country name"
                       icon={GlobeIcon}
                       disabled={isSubmitting}
                     />
@@ -477,7 +477,7 @@ export const ComplexContactForm: React.FC<ComplexContactFormProps> = ({
                     control={form.control}
                     name="address.googleLocation"
                     label="Google Maps Location"
-                    placeholder="Google Maps URL or Place ID"
+                            placeholder="Google Maps URL or Place ID"
                     icon={MapPinIcon}
                     disabled={isSubmitting}
                   />
@@ -485,7 +485,7 @@ export const ComplexContactForm: React.FC<ComplexContactFormProps> = ({
               </div>
             </CollapsibleCard>
 
-            {/* Emergency Contact */}
+          {/* Emergency Contact */}
             <CollapsibleCard
               title="Emergency Contact"
               isOpen={isEmergencyExpanded}
@@ -499,7 +499,7 @@ export const ComplexContactForm: React.FC<ComplexContactFormProps> = ({
                       control={form.control}
                       name="emergencyContact.name"
                       label="Contact Name"
-                      placeholder="John Doe"
+                              placeholder="John Doe"
                       icon={UserIcon}
                       disabled={isSubmitting}
                     />
@@ -509,7 +509,7 @@ export const ComplexContactForm: React.FC<ComplexContactFormProps> = ({
                       control={form.control}
                       name="emergencyContact.phone"
                       label="Contact Phone"
-                      placeholder="+1234567890"
+                              placeholder="+1234567890"
                       icon={PhoneIcon}
                       disabled={isSubmitting}
                     />
@@ -523,7 +523,7 @@ export const ComplexContactForm: React.FC<ComplexContactFormProps> = ({
                       label="Contact Email"
                       placeholder="emergency@example.com"
                       icon={Mail}
-                      type="email"
+                              type="email"
                       disabled={isSubmitting}
                     />
 
@@ -532,7 +532,7 @@ export const ComplexContactForm: React.FC<ComplexContactFormProps> = ({
                       control={form.control}
                       name="emergencyContact.relationship"
                       label="Relationship"
-                      placeholder="Manager, Director, etc."
+                              placeholder="Manager, Director, etc."
                       icon={UserIcon}
                       disabled={isSubmitting}
                     />
@@ -541,7 +541,7 @@ export const ComplexContactForm: React.FC<ComplexContactFormProps> = ({
               </div>
             </CollapsibleCard>
 
-            {/* Social Media Links */}
+          {/* Social Media Links */}
             <CollapsibleCard
               title="Social Media & Web"
               isOpen={isSocialExpanded}
@@ -555,7 +555,7 @@ export const ComplexContactForm: React.FC<ComplexContactFormProps> = ({
                       control={form.control}
                       name="socialMediaLinks.facebook"
                       label="Facebook"
-                      placeholder="https://facebook.com/yourcomplex"
+                              placeholder="https://facebook.com/yourcomplex"
                       icon={Facebook}
                       disabled={isSubmitting}
                     />
@@ -565,7 +565,7 @@ export const ComplexContactForm: React.FC<ComplexContactFormProps> = ({
                       control={form.control}
                       name="socialMediaLinks.instagram"
                       label="Instagram"
-                      placeholder="https://instagram.com/yourcomplex"
+                              placeholder="https://instagram.com/yourcomplex"
                       icon={Instagram}
                       disabled={isSubmitting}
                     />
@@ -575,7 +575,7 @@ export const ComplexContactForm: React.FC<ComplexContactFormProps> = ({
                       control={form.control}
                       name="socialMediaLinks.twitter"
                       label="Twitter"
-                      placeholder="https://twitter.com/yourcomplex"
+                              placeholder="https://twitter.com/yourcomplex"
                       icon={Twitter}
                       disabled={isSubmitting}
                     />
@@ -585,7 +585,7 @@ export const ComplexContactForm: React.FC<ComplexContactFormProps> = ({
                       control={form.control}
                       name="socialMediaLinks.linkedin"
                       label="LinkedIn"
-                      placeholder="https://linkedin.com/company/yourcomplex"
+                              placeholder="https://linkedin.com/company/yourcomplex"
                       icon={Linkedin}
                       disabled={isSubmitting}
                     />
@@ -595,7 +595,7 @@ export const ComplexContactForm: React.FC<ComplexContactFormProps> = ({
                       control={form.control}
                       name="socialMediaLinks.whatsapp"
                       label="WhatsApp"
-                      placeholder="https://wa.me/1234567890"
+                              placeholder="https://wa.me/1234567890"
                       icon={MessageCircle}
                       disabled={isSubmitting}
                     />
@@ -605,7 +605,7 @@ export const ComplexContactForm: React.FC<ComplexContactFormProps> = ({
                       control={form.control}
                       name="socialMediaLinks.youtube"
                       label="YouTube"
-                      placeholder="https://youtube.com/@yourcomplex"
+                              placeholder="https://youtube.com/@yourcomplex"
                       icon={Youtube}
                       disabled={isSubmitting}
                     />
@@ -616,16 +616,16 @@ export const ComplexContactForm: React.FC<ComplexContactFormProps> = ({
 
             {/* Bottom Navigation */}
             <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-12">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={onPrevious}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onPrevious}
                 disabled={isSubmitting}
                 className="w-full sm:w-auto h-[48px] px-8 font-lato text-primary border-border hover:bg-muted"
-              >
+            >
                 <ChevronLeft className="w-4 h-4 mr-2" />
-                Previous
-              </Button>
+              Previous
+            </Button>
               <Button
                 type="submit"
                 disabled={isSubmitting || emailValidation.isChecking || !form.formState.isValid}
@@ -644,8 +644,8 @@ export const ComplexContactForm: React.FC<ComplexContactFormProps> = ({
                 )}
               </Button>
             </div>
-          </form>
-        </Form>
+        </form>
+      </Form>
       </div>
     </div>
   );

@@ -14,6 +14,7 @@ import { ChevronLeftIcon, ChevronRightIcon, ChevronDownIcon, ChevronUpIcon, Cloc
 import { toast } from 'sonner';
 import { ClinicWorkingHoursDto } from '@/types/onboarding';
 import { saveClinicSchedule } from '@/api/onboardingApiClient';
+import { useClivinaTheme } from "@/hooks/useClivinaTheme";
 
 // Working hours schema based on ClinicWorkingHoursDto
 const workingDaySchema = z.object({
@@ -74,6 +75,7 @@ export const ClinicScheduleForm: React.FC<ClinicScheduleFormProps> = ({
 }) => {
   const [isScheduleExpanded, setIsScheduleExpanded] = useState(true);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const { colors } = useClivinaTheme();
 
   const daysOfWeek = [
     { key: 'monday', label: 'Monday' },
@@ -172,78 +174,82 @@ export const ClinicScheduleForm: React.FC<ClinicScheduleFormProps> = ({
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <div className="mb-8">
-        <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
-          <span>Clinic Setup</span>
-          <ChevronRightIcon className="h-4 w-4" />
-          <span className="text-primary font-medium">Schedule & Hours</span>
+    <div className="min-h-screen bg-background">
+      {/* Main Content */}
+      <div className="p-8 bg-background">
+        {/* Header */}
+        <div className="mb-8">
+          <button
+            className="flex items-center gap-2 text-sm mb-4 text-muted-foreground hover:text-primary transition-colors font-lato"
+            onClick={onPrevious}
+            type="button"
+          >
+            <ChevronLeftIcon className="w-4 h-4" />
+            Back to Services & Capacity
+          </button>
+          <h1 className="text-2xl font-bold mb-2 text-primary font-lato">
+            Fill in Clinic Details
+          </h1>
+          <p className="text-muted-foreground font-lato">Schedule & Working Hours</p>
         </div>
-        
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          Clinic Working Hours
-        </h1>
-        <p className="text-gray-600">
-          Set your clinic's operating hours and break times
-        </p>
-      </div>
 
-      {/* Complex Schedule Constraint Notice */}
-      {planType === 'company' && complexSchedule && (
-        <Card className="mb-6 border-blue-200 bg-blue-50">
-          <CardContent className="p-4">
-            <div className="flex items-start gap-3">
-              <BuildingIcon className="h-5 w-5 text-blue-600 mt-0.5" />
-              <div>
-                <h3 className="font-medium text-blue-900 mb-1">Complex Schedule Constraints</h3>
-                <p className="text-sm text-blue-700">
-                  Your clinic hours must be within your complex's operating hours. 
-                  The complex schedule will be used to validate your clinic's availability.
-                </p>
+        {/* Complex Schedule Constraint Notice */}
+        {planType === 'company' && complexSchedule && (
+          <Card className="mb-6 border-primary/20" style={{ backgroundColor: colors.primary.light }}>
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                <BuildingIcon className="h-5 w-5 text-primary mt-0.5" />
+                <div>
+                  <h3 className="font-medium text-primary mb-1 font-lato">Complex Schedule Constraints</h3>
+                  <p className="text-sm text-primary/80 font-lato">
+                    Your clinic hours must be within your complex's operating hours. 
+                    The complex schedule will be used to validate your clinic's availability.
+                  </p>
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+            </CardContent>
+          </Card>
+        )}
 
-      {/* Validation Errors */}
-      {validationErrors.length > 0 && (
-        <Card className="mb-6 border-red-200 bg-red-50">
-          <CardContent className="p-4">
-            <div className="flex items-start gap-3">
-              <AlertTriangleIcon className="h-5 w-5 text-red-600 mt-0.5" />
-              <div>
-                <h3 className="font-medium text-red-900 mb-2">Schedule Conflicts</h3>
-                <ul className="text-sm text-red-700 space-y-1">
-                  {validationErrors.map((error, index) => (
-                    <li key={index}>• {error}</li>
-                  ))}
-                </ul>
+        {/* Validation Errors */}
+        {validationErrors.length > 0 && (
+          <Card className="mb-6 border-destructive/20" style={{ backgroundColor: colors.surface.secondary }}>
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                <AlertTriangleIcon className="h-5 w-5 text-destructive mt-0.5" />
+                <div>
+                  <h3 className="font-medium text-destructive mb-2 font-lato">Schedule Conflicts</h3>
+                  <ul className="text-sm text-destructive/80 space-y-1 font-lato">
+                    {validationErrors.map((error, index) => (
+                      <li key={index}>• {error}</li>
+                    ))}
+                  </ul>
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+            </CardContent>
+          </Card>
+        )}
 
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        {/* Form */}
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="w-full space-y-8">
           
           {/* Working Hours Section */}
-          <Card>
+          <Card className="border-border bg-card">
             <Collapsible open={isScheduleExpanded} onOpenChange={setIsScheduleExpanded}>
               <CollapsibleTrigger asChild>
-                <div className="flex items-center justify-between p-6 cursor-pointer hover:bg-gray-50">
+                <div className="flex items-center justify-between p-6 cursor-pointer hover:bg-surface-hover">
                   <div className="flex items-center gap-3">
                     <CalendarIcon className="h-5 w-5 text-primary" />
                     <div>
-                      <h2 className="text-xl font-semibold text-gray-900">Weekly Schedule</h2>
-                      <p className="text-sm text-gray-600">Set working hours for each day</p>
+                      <h2 className="text-xl font-semibold text-foreground font-lato">Weekly Schedule</h2>
+                      <p className="text-sm text-muted-foreground font-lato">Set working hours for each day</p>
                     </div>
                   </div>
                   {isScheduleExpanded ? (
-                    <ChevronUpIcon className="h-5 w-5 text-gray-500" />
+                    <ChevronUpIcon className="h-5 w-5 text-muted-foreground" />
                   ) : (
-                    <ChevronDownIcon className="h-5 w-5 text-gray-500" />
+                    <ChevronDownIcon className="h-5 w-5 text-muted-foreground" />
                   )}
                 </div>
               </CollapsibleTrigger>
@@ -253,13 +259,13 @@ export const ClinicScheduleForm: React.FC<ClinicScheduleFormProps> = ({
 
                   <div className="space-y-4">
                     {daysOfWeek.map((day, index) => (
-                      <Card key={day.key} className="border-gray-200">
+                      <Card key={day.key} className="border-border bg-surface-tertiary">
                         <CardContent className="p-4">
                           <div className="space-y-4">
                             
                             {/* Day and Working Day Toggle */}
                             <div className="flex items-center justify-between">
-                              <h3 className="font-medium text-gray-900">{day.label}</h3>
+                              <h3 className="font-medium text-foreground font-lato">{day.label}</h3>
                               <FormField
                                 control={form.control}
                                 name={`workingHours.${index}.isWorkingDay`}
@@ -270,9 +276,10 @@ export const ClinicScheduleForm: React.FC<ClinicScheduleFormProps> = ({
                                         checked={field.value}
                                         onCheckedChange={field.onChange}
                                         disabled={isLoading}
+                                        className="border-border data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                                       />
                                     </FormControl>
-                                    <FormLabel className="text-sm font-normal">
+                                    <FormLabel className="text-sm font-normal text-muted-foreground font-lato">
                                       Open on {day.label}
                                     </FormLabel>
                                   </FormItem>
@@ -290,12 +297,16 @@ export const ClinicScheduleForm: React.FC<ClinicScheduleFormProps> = ({
                                   name={`workingHours.${index}.openingTime`}
                                   render={({ field }) => (
                                     <FormItem>
-                                      <FormLabel>Opening Time</FormLabel>
+                                      <FormLabel className="text-sm font-bold text-primary font-lato">Opening Time</FormLabel>
                                       <FormControl>
                                         <Input
                                           type="time"
                                           {...field}
-                                          className="h-10"
+                                          className="h-[48px] text-base font-lato border-border bg-background text-foreground focus-visible:ring-ring focus-visible:border-ring shadow-sm"
+                                          style={{
+                                            boxShadow: '0px 0px 1px 1px rgba(21, 197, 206, 0.16)',
+                                            borderRadius: '8px'
+                                          }}
                                           disabled={isLoading}
                                         />
                                       </FormControl>
@@ -310,12 +321,16 @@ export const ClinicScheduleForm: React.FC<ClinicScheduleFormProps> = ({
                                   name={`workingHours.${index}.closingTime`}
                                   render={({ field }) => (
                                     <FormItem>
-                                      <FormLabel>Closing Time</FormLabel>
+                                      <FormLabel className="text-sm font-bold text-primary font-lato">Closing Time</FormLabel>
                                       <FormControl>
                                         <Input
                                           type="time"
                                           {...field}
-                                          className="h-10"
+                                          className="h-[48px] text-base font-lato border-border bg-background text-foreground focus-visible:ring-ring focus-visible:border-ring shadow-sm"
+                                          style={{
+                                            boxShadow: '0px 0px 1px 1px rgba(21, 197, 206, 0.16)',
+                                            borderRadius: '8px'
+                                          }}
                                           disabled={isLoading}
                                         />
                                       </FormControl>
@@ -330,12 +345,16 @@ export const ClinicScheduleForm: React.FC<ClinicScheduleFormProps> = ({
                                   name={`workingHours.${index}.breakStartTime`}
                                   render={({ field }) => (
                                     <FormItem>
-                                      <FormLabel>Break Start</FormLabel>
+                                      <FormLabel className="text-sm font-bold text-primary font-lato">Break Start</FormLabel>
                                       <FormControl>
                                         <Input
                                           type="time"
                                           {...field}
-                                          className="h-10"
+                                          className="h-[48px] text-base font-lato border-border bg-background text-foreground focus-visible:ring-ring focus-visible:border-ring shadow-sm"
+                                          style={{
+                                            boxShadow: '0px 0px 1px 1px rgba(21, 197, 206, 0.16)',
+                                            borderRadius: '8px'
+                                          }}
                                           disabled={isLoading}
                                         />
                                       </FormControl>
@@ -350,12 +369,16 @@ export const ClinicScheduleForm: React.FC<ClinicScheduleFormProps> = ({
                                   name={`workingHours.${index}.breakEndTime`}
                                   render={({ field }) => (
                                     <FormItem>
-                                      <FormLabel>Break End</FormLabel>
+                                      <FormLabel className="text-sm font-bold text-primary font-lato">Break End</FormLabel>
                                       <FormControl>
                                         <Input
                                           type="time"
                                           {...field}
-                                          className="h-10"
+                                          className="h-[48px] text-base font-lato border-border bg-background text-foreground focus-visible:ring-ring focus-visible:border-ring shadow-sm"
+                                          style={{
+                                            boxShadow: '0px 0px 1px 1px rgba(21, 197, 206, 0.16)',
+                                            borderRadius: '8px'
+                                          }}
                                           disabled={isLoading}
                                         />
                                       </FormControl>
@@ -373,7 +396,7 @@ export const ClinicScheduleForm: React.FC<ClinicScheduleFormProps> = ({
                                 const complexDay = complexSchedule.find((cd: any) => cd.dayOfWeek === day.key);
                                 if (complexDay && complexDay.isWorkingDay) {
                                   return (
-                                    <div className="text-xs text-blue-600 bg-blue-50 p-2 rounded">
+                                    <div className="text-xs text-primary p-2 rounded font-lato" style={{ backgroundColor: colors.primary.light }}>
                                       Complex hours: {complexDay.openingTime} - {complexDay.closingTime}
                                       {complexDay.breakStartTime && complexDay.breakEndTime && 
                                         ` (Break: ${complexDay.breakStartTime} - ${complexDay.breakEndTime})`
@@ -391,20 +414,22 @@ export const ClinicScheduleForm: React.FC<ClinicScheduleFormProps> = ({
                     ))}
                   </div>
 
-                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-                    <div className="flex items-start gap-3">
-                      <ClockIcon className="h-5 w-5 text-amber-600 mt-0.5" />
-                      <div>
-                        <h3 className="font-medium text-amber-900 mb-1">Schedule Guidelines</h3>
-                        <div className="text-sm text-amber-700 space-y-1">
-                          <p>• Select at least one working day for your clinic</p>
-                          <p>• Break times are optional but help manage staff scheduling</p>
-                          <p>• Use 24-hour format (e.g., 09:00, 17:30)</p>
-                          {planType === 'company' && <p>• Clinic hours must be within your complex's operating hours</p>}
+                  <Card className="border-primary/20" style={{ backgroundColor: colors.surface.secondary }}>
+                    <CardContent className="p-4">
+                      <div className="flex items-start gap-3">
+                        <ClockIcon className="h-5 w-5 text-primary mt-0.5" />
+                        <div>
+                          <h3 className="font-medium text-foreground mb-1 font-lato">Schedule Guidelines</h3>
+                          <div className="text-sm text-muted-foreground space-y-1 font-lato">
+                            <p>• Select at least one working day for your clinic</p>
+                            <p>• Break times are optional but help manage staff scheduling</p>
+                            <p>• Use 24-hour format (e.g., 09:00, 17:30)</p>
+                            {planType === 'company' && <p>• Clinic hours must be within your complex's operating hours</p>}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </div>
+                    </CardContent>
+                  </Card>
 
                 </CardContent>
               </CollapsibleContent>
@@ -412,13 +437,13 @@ export const ClinicScheduleForm: React.FC<ClinicScheduleFormProps> = ({
           </Card>
 
           {/* Schedule Summary */}
-          <Card className="border-green-200 bg-green-50">
+          <Card className="border-primary/20" style={{ backgroundColor: colors.primary.light }}>
             <CardContent className="p-6">
               <div className="flex items-start gap-3">
-                <CheckCircle className="h-6 w-6 text-green-600 mt-0.5" />
+                <CheckCircle className="h-6 w-6 text-primary mt-0.5" />
                 <div>
-                  <h3 className="font-medium text-green-900 mb-2">Schedule Summary</h3>
-                  <div className="text-sm text-green-700">
+                  <h3 className="font-medium text-primary mb-2 font-lato">Schedule Summary</h3>
+                  <div className="text-sm text-primary/80 font-lato">
                     {form.watch('workingHours')?.filter(day => day.isWorkingDay).length > 0 ? (
                       <div className="space-y-1">
                         <p className="font-medium">Working Days:</p>
@@ -445,7 +470,7 @@ export const ClinicScheduleForm: React.FC<ClinicScheduleFormProps> = ({
               variant="outline"
               onClick={onPrevious}
               disabled={isLoading}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 h-[48px] border-border hover:bg-surface-hover font-lato"
             >
               <ChevronLeftIcon className="h-4 w-4" />
               Previous
@@ -455,7 +480,7 @@ export const ClinicScheduleForm: React.FC<ClinicScheduleFormProps> = ({
               <Button
                 type="submit"
                 disabled={isLoading}
-                className="flex items-center gap-2 min-w-[120px]"
+                className="flex items-center gap-2 min-w-[120px] h-[48px] bg-primary hover:bg-primary-dark text-white font-lato"
               >
                 {isLoading ? (
                   <>
@@ -472,8 +497,9 @@ export const ClinicScheduleForm: React.FC<ClinicScheduleFormProps> = ({
             </div>
           </div>
 
-        </form>
-      </Form>
+          </form>
+        </Form>
+      </div>
     </div>
   );
 };

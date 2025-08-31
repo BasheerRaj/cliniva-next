@@ -245,33 +245,6 @@ export const NavigationSidebar = ({
         </div>
       </div>
 
-      {/* Plan Type Indicator */}
-      <div 
-        className="absolute bottom-6 left-6 rounded-lg shadow-sm p-4 border"
-        style={{ 
-          backgroundColor: colors.background.secondary,
-          borderColor: colors.primary.light
-        }}
-      >
-        <div 
-          className="text-xs font-medium"
-          style={{ color: colors.primary.default }}
-        >
-          Plan Type
-        </div>
-        <div 
-          className="text-sm font-semibold capitalize"
-          style={{ color: colors.text.primary }}
-        >
-          {planType}
-        </div>
-        <div 
-          className="text-xs mt-1"
-          style={{ color: colors.text.secondary }}
-        >
-          Step {currentStep} of {dynamicStepperData.length}
-        </div>
-      </div>
     </nav>
   );
 };

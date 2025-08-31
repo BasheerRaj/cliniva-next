@@ -883,15 +883,10 @@ export default function SetupPage() {
     );
   }
 
-  // Check if we should render the new full-page layout
-  const shouldUseNewLayout = planType === 'company' && currentStep === 1 && currentSubStep === 'overview';
-
-  if (shouldUseNewLayout) {
-    return renderCurrentForm();
-  }
+  // All forms should use the consistent layout with sidebar
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="min-h-screen bg-gray-50 flex h-screen overflow-hidden">
       {/* Navigation Sidebar */}
       <NavigationSidebar
         currentStep={currentStep}
@@ -901,7 +896,7 @@ export default function SetupPage() {
       />
 
       {/* Main Content */}
-      <div className="flex-1 relative">
+      <div className="flex-1 relative h-full overflow-y-auto">
         {/* Skip Button - Top Right */}
         {shouldShowSkipButton() && (
           <div className="absolute top-4 right-4 z-10">

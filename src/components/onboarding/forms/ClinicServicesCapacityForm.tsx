@@ -14,6 +14,8 @@ import { ChevronLeftIcon, ChevronRightIcon, ChevronDownIcon, ChevronUpIcon, Plus
 import { toast } from 'sonner';
 import { ClinicServicesCapacityDto } from '@/types/onboarding';
 import { saveClinicServicesCapacity } from '@/api/onboardingApiClient';
+import { useClivinaTheme } from "@/hooks/useClivinaTheme";
+import { FormFieldWithIcon } from '@/components/ui/form-field-with-icon';
 
 // Service name validation function removed - services don't need to be unique
 
@@ -58,6 +60,7 @@ export const ClinicServicesCapacityForm: React.FC<ClinicServicesCapacityFormProp
 }) => {
   const [isServicesExpanded, setIsServicesExpanded] = useState(true);
   const [isCapacityExpanded, setIsCapacityExpanded] = useState(false);
+  const { colors } = useClivinaTheme();
 
   const form = useForm<ClinicServicesCapacityFormData>({
     resolver: zodResolver(clinicServicesCapacitySchema),
@@ -141,41 +144,45 @@ export const ClinicServicesCapacityForm: React.FC<ClinicServicesCapacityFormProp
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <div className="mb-8">
-        <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
-          <span>Clinic Setup</span>
-          <ChevronRightIcon className="h-4 w-4" />
-          <span className="text-primary font-medium">Services & Capacity</span>
+    <div className="min-h-screen bg-background">
+      {/* Main Content */}
+      <div className="p-8 bg-background">
+        {/* Header */}
+        <div className="mb-8">
+          <button
+            className="flex items-center gap-2 text-sm mb-4 text-muted-foreground hover:text-primary transition-colors font-lato"
+            onClick={onPrevious}
+            type="button"
+          >
+            <ChevronLeftIcon className="w-4 h-4" />
+            Back to Contact Details
+          </button>
+          <h1 className="text-2xl font-bold mb-2 text-primary font-lato">
+            Fill in Clinic Details
+          </h1>
+          <p className="text-muted-foreground font-lato">Services & Capacity</p>
         </div>
-        
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          Services & Capacity
-        </h1>
-        <p className="text-gray-600">
-          Configure the medical services offered and clinic capacity settings
-        </p>
-      </div>
 
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        {/* Form */}
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="w-full space-y-8">
           
           {/* Medical Services Section */}
-          <Card>
+          <Card className="border-border bg-card">
             <Collapsible open={isServicesExpanded} onOpenChange={setIsServicesExpanded}>
               <CollapsibleTrigger asChild>
-                <div className="flex items-center justify-between p-6 cursor-pointer hover:bg-gray-50">
+                <div className="flex items-center justify-between p-6 cursor-pointer hover:bg-surface-hover">
                   <div className="flex items-center gap-3">
                     <StethoscopeIcon className="h-5 w-5 text-primary" />
                     <div>
-                      <h2 className="text-xl font-semibold text-gray-900">Medical Services</h2>
-                      <p className="text-sm text-gray-600">Services offered by your clinic</p>
+                      <h2 className="text-xl font-semibold text-foreground font-lato">Medical Services</h2>
+                      <p className="text-sm text-muted-foreground font-lato">Services offered by your clinic</p>
                     </div>
                   </div>
                   {isServicesExpanded ? (
-                    <ChevronUpIcon className="h-5 w-5 text-gray-500" />
+                    <ChevronUpIcon className="h-5 w-5 text-muted-foreground" />
                   ) : (
-                    <ChevronDownIcon className="h-5 w-5 text-gray-500" />
+                    <ChevronDownIcon className="h-5 w-5 text-muted-foreground" />
                   )}
                 </div>
               </CollapsibleTrigger>
@@ -185,17 +192,17 @@ export const ClinicServicesCapacityForm: React.FC<ClinicServicesCapacityFormProp
 
                   <div className="space-y-4">
                     {serviceFields.map((field, index) => (
-                      <Card key={field.id} className="border-gray-200 bg-gray-50">
+                      <Card key={field.id} className="border-border bg-surface-tertiary">
                         <CardContent className="p-4 space-y-3">
                           <div className="flex items-center justify-between">
-                            <h4 className="font-medium text-gray-900">Service #{index + 1}</h4>
+                            <h4 className="font-medium text-foreground font-lato">Service #{index + 1}</h4>
                             {serviceFields.length > 1 && (
                               <Button
                                 type="button"
                                 variant="outline"
                                 size="sm"
                                 onClick={() => removeService(index)}
-                                className="text-red-600 hover:text-red-700"
+                                className="text-destructive hover:text-destructive border-border hover:bg-surface-hover"
                               >
                                 <TrashIcon className="h-4 w-4" />
                               </Button>
@@ -209,12 +216,16 @@ export const ClinicServicesCapacityForm: React.FC<ClinicServicesCapacityFormProp
                               name={`services.${index}.name`}
                               render={({ field }) => (
                                 <FormItem>
-                                  <FormLabel>Service Name *</FormLabel>
+                                  <FormLabel className="text-sm font-bold text-primary font-lato">Service Name *</FormLabel>
                                   <FormControl>
                                     <Input
                                       {...field}
                                       placeholder="e.g., General Consultation"
-                                      className="h-10"
+                                      className="h-[48px] text-base font-lato border-border bg-background text-foreground focus-visible:ring-ring focus-visible:border-ring shadow-sm placeholder:text-muted-foreground"
+                                      style={{
+                                        boxShadow: '0px 0px 1px 1px rgba(21, 197, 206, 0.16)',
+                                        borderRadius: '8px'
+                                      }}
                                       disabled={isLoading}
                                     />
                                   </FormControl>
@@ -229,12 +240,16 @@ export const ClinicServicesCapacityForm: React.FC<ClinicServicesCapacityFormProp
                               name={`services.${index}.durationMinutes`}
                               render={({ field }) => (
                                 <FormItem>
-                                  <FormLabel>Duration (minutes)</FormLabel>
+                                  <FormLabel className="text-sm font-bold text-primary font-lato">Duration (minutes)</FormLabel>
                                   <FormControl>
                                     <Input
                                       type="number"
                                       placeholder="30"
-                                      className="h-10"
+                                      className="h-[48px] text-base font-lato border-border bg-background text-foreground focus-visible:ring-ring focus-visible:border-ring shadow-sm placeholder:text-muted-foreground"
+                                      style={{
+                                        boxShadow: '0px 0px 1px 1px rgba(21, 197, 206, 0.16)',
+                                        borderRadius: '8px'
+                                      }}
                                       disabled={isLoading}
                                       {...field}
                                       value={field.value || ''}
@@ -257,12 +272,16 @@ export const ClinicServicesCapacityForm: React.FC<ClinicServicesCapacityFormProp
                               name={`services.${index}.description`}
                               render={({ field }) => (
                                 <FormItem>
-                                  <FormLabel>Description</FormLabel>
+                                  <FormLabel className="text-sm font-bold text-primary font-lato">Description</FormLabel>
                                   <FormControl>
                                     <Textarea
                                       {...field}
                                       placeholder="Brief description of the service"
-                                      className="min-h-[80px] resize-none"
+                                      className="min-h-[80px] resize-none text-base font-lato border-border bg-background text-foreground focus-visible:ring-ring focus-visible:border-ring shadow-sm placeholder:text-muted-foreground"
+                                      style={{
+                                        boxShadow: '0px 0px 1px 1px rgba(21, 197, 206, 0.16)',
+                                        borderRadius: '8px'
+                                      }}
                                       disabled={isLoading}
                                     />
                                   </FormControl>
@@ -277,13 +296,17 @@ export const ClinicServicesCapacityForm: React.FC<ClinicServicesCapacityFormProp
                               name={`services.${index}.price`}
                               render={({ field }) => (
                                 <FormItem>
-                                  <FormLabel>Price</FormLabel>
+                                  <FormLabel className="text-sm font-bold text-primary font-lato">Price</FormLabel>
                                   <FormControl>
                                     <Input
                                       type="number"
                                       step="0.01"
                                       placeholder="0.00"
-                                      className="h-10"
+                                      className="h-[48px] text-base font-lato border-border bg-background text-foreground focus-visible:ring-ring focus-visible:border-ring shadow-sm placeholder:text-muted-foreground"
+                                      style={{
+                                        boxShadow: '0px 0px 1px 1px rgba(21, 197, 206, 0.16)',
+                                        borderRadius: '8px'
+                                      }}
                                       disabled={isLoading}
                                       {...field}
                                       value={field.value || ''}
@@ -307,7 +330,7 @@ export const ClinicServicesCapacityForm: React.FC<ClinicServicesCapacityFormProp
                         type="button"
                         variant="outline"
                         onClick={addService}
-                        className="w-full h-12 border-dashed"
+                        className="w-full h-[48px] border-dashed border-border text-primary hover:bg-surface-hover font-lato"
                         disabled={isLoading}
                       >
                         <PlusIcon className="h-4 w-4 mr-2" />
@@ -316,18 +339,20 @@ export const ClinicServicesCapacityForm: React.FC<ClinicServicesCapacityFormProp
                     )}
                   </div>
 
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
-                    <div className="flex items-start gap-3">
-                      <StethoscopeIcon className="h-5 w-5 text-blue-600 mt-0.5" />
-                      <div>
-                        <h3 className="font-medium text-blue-900 mb-1">Service Information</h3>
-                        <p className="text-sm text-blue-700">
-                          Add all the medical services your clinic offers. You can always add more services 
-                          or modify existing ones later through the clinic management dashboard.
-                        </p>
+                  <Card className="border-primary/20 mt-4" style={{ backgroundColor: colors.primary.light }}>
+                    <CardContent className="p-4">
+                      <div className="flex items-start gap-3">
+                        <StethoscopeIcon className="h-5 w-5 text-primary mt-0.5" />
+                        <div>
+                          <h3 className="font-medium text-primary mb-1 font-lato">Service Information</h3>
+                          <p className="text-sm text-primary/80 font-lato">
+                            Add all the medical services your clinic offers. You can always add more services 
+                            or modify existing ones later through the clinic management dashboard.
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  </div>
+                    </CardContent>
+                  </Card>
 
                 </CardContent>
               </CollapsibleContent>
@@ -335,21 +360,21 @@ export const ClinicServicesCapacityForm: React.FC<ClinicServicesCapacityFormProp
           </Card>
 
           {/* Capacity Settings Section */}
-          <Card>
+          <Card className="border-border bg-card">
             <Collapsible open={isCapacityExpanded} onOpenChange={setIsCapacityExpanded}>
               <CollapsibleTrigger asChild>
-                <div className="flex items-center justify-between p-6 cursor-pointer hover:bg-gray-50">
+                <div className="flex items-center justify-between p-6 cursor-pointer hover:bg-surface-hover">
                   <div className="flex items-center gap-3">
                     <UsersIcon className="h-5 w-5 text-primary" />
                     <div>
-                      <h2 className="text-xl font-semibold text-gray-900">Capacity Settings</h2>
-                      <p className="text-sm text-gray-600">Optional capacity configuration</p>
+                      <h2 className="text-xl font-semibold text-foreground font-lato">Capacity Settings</h2>
+                      <p className="text-sm text-muted-foreground font-lato">Optional capacity configuration</p>
                     </div>
                   </div>
                   {isCapacityExpanded ? (
-                    <ChevronUpIcon className="h-5 w-5 text-gray-500" />
+                    <ChevronUpIcon className="h-5 w-5 text-muted-foreground" />
                   ) : (
-                    <ChevronDownIcon className="h-5 w-5 text-gray-500" />
+                    <ChevronDownIcon className="h-5 w-5 text-muted-foreground" />
                   )}
                 </div>
               </CollapsibleTrigger>
@@ -365,12 +390,16 @@ export const ClinicServicesCapacityForm: React.FC<ClinicServicesCapacityFormProp
                       name="capacity.maxStaff"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Maximum Staff</FormLabel>
+                          <FormLabel className="text-sm font-bold text-primary font-lato">Maximum Staff</FormLabel>
                           <FormControl>
                             <Input
                               type="number"
                               placeholder="50"
-                              className="h-12"
+                              className="h-[48px] text-base font-lato border-border bg-background text-foreground focus-visible:ring-ring focus-visible:border-ring shadow-sm placeholder:text-muted-foreground"
+                              style={{
+                                boxShadow: '0px 0px 1px 1px rgba(21, 197, 206, 0.16)',
+                                borderRadius: '8px'
+                              }}
                               disabled={isLoading}
                               {...field}
                               value={field.value || ''}
@@ -380,7 +409,7 @@ export const ClinicServicesCapacityForm: React.FC<ClinicServicesCapacityFormProp
                               }}
                             />
                           </FormControl>
-                          <div className="text-xs text-gray-500">
+                          <div className="text-xs text-muted-foreground font-lato">
                             Maximum number of staff members
                           </div>
                           <FormMessage />
@@ -394,12 +423,16 @@ export const ClinicServicesCapacityForm: React.FC<ClinicServicesCapacityFormProp
                       name="capacity.maxDoctors"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Maximum Doctors</FormLabel>
+                          <FormLabel className="text-sm font-bold text-primary font-lato">Maximum Doctors</FormLabel>
                           <FormControl>
                             <Input
                               type="number"
                               placeholder="10"
-                              className="h-12"
+                              className="h-[48px] text-base font-lato border-border bg-background text-foreground focus-visible:ring-ring focus-visible:border-ring shadow-sm placeholder:text-muted-foreground"
+                              style={{
+                                boxShadow: '0px 0px 1px 1px rgba(21, 197, 206, 0.16)',
+                                borderRadius: '8px'
+                              }}
                               disabled={isLoading}
                               {...field}
                               value={field.value || ''}
@@ -409,7 +442,7 @@ export const ClinicServicesCapacityForm: React.FC<ClinicServicesCapacityFormProp
                               }}
                             />
                           </FormControl>
-                          <div className="text-xs text-gray-500">
+                          <div className="text-xs text-muted-foreground font-lato">
                             Maximum number of doctors
                           </div>
                           <FormMessage />
@@ -423,12 +456,16 @@ export const ClinicServicesCapacityForm: React.FC<ClinicServicesCapacityFormProp
                       name="capacity.maxPatients"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Maximum Patients</FormLabel>
+                          <FormLabel className="text-sm font-bold text-primary font-lato">Maximum Patients</FormLabel>
                           <FormControl>
                             <Input
                               type="number"
                               placeholder="500"
-                              className="h-12"
+                              className="h-[48px] text-base font-lato border-border bg-background text-foreground focus-visible:ring-ring focus-visible:border-ring shadow-sm placeholder:text-muted-foreground"
+                              style={{
+                                boxShadow: '0px 0px 1px 1px rgba(21, 197, 206, 0.16)',
+                                borderRadius: '8px'
+                              }}
                               disabled={isLoading}
                               {...field}
                               value={field.value || ''}
@@ -438,7 +475,7 @@ export const ClinicServicesCapacityForm: React.FC<ClinicServicesCapacityFormProp
                               }}
                             />
                           </FormControl>
-                          <div className="text-xs text-gray-500">
+                          <div className="text-xs text-muted-foreground font-lato">
                             Maximum number of patients
                           </div>
                           <FormMessage />
@@ -452,12 +489,16 @@ export const ClinicServicesCapacityForm: React.FC<ClinicServicesCapacityFormProp
                       name="capacity.sessionDuration"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Default Session Duration</FormLabel>
+                          <FormLabel className="text-sm font-bold text-primary font-lato">Default Session Duration</FormLabel>
                           <FormControl>
                             <Input
                               type="number"
                               placeholder="30"
-                              className="h-12"
+                              className="h-[48px] text-base font-lato border-border bg-background text-foreground focus-visible:ring-ring focus-visible:border-ring shadow-sm placeholder:text-muted-foreground"
+                              style={{
+                                boxShadow: '0px 0px 1px 1px rgba(21, 197, 206, 0.16)',
+                                borderRadius: '8px'
+                              }}
                               disabled={isLoading}
                               {...field}
                               value={field.value || ''}
@@ -467,7 +508,7 @@ export const ClinicServicesCapacityForm: React.FC<ClinicServicesCapacityFormProp
                               }}
                             />
                           </FormControl>
-                          <div className="text-xs text-gray-500">
+                          <div className="text-xs text-muted-foreground font-lato">
                             Default session duration in minutes
                           </div>
                           <FormMessage />
@@ -477,19 +518,21 @@ export const ClinicServicesCapacityForm: React.FC<ClinicServicesCapacityFormProp
 
                   </div>
 
-                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-                    <div className="flex items-start gap-3">
-                      <ClockIcon className="h-5 w-5 text-amber-600 mt-0.5" />
-                      <div>
-                        <h3 className="font-medium text-amber-900 mb-1">Optional Configuration</h3>
-                        <p className="text-sm text-amber-700">
-                          Capacity settings are optional and have been set to reasonable defaults. 
-                          You can adjust these values later in the clinic settings. These limits 
-                          help manage system resources and ensure optimal performance.
-                        </p>
+                  <Card className="border-primary/20" style={{ backgroundColor: colors.surface.secondary }}>
+                    <CardContent className="p-4">
+                      <div className="flex items-start gap-3">
+                        <ClockIcon className="h-5 w-5 text-primary mt-0.5" />
+                        <div>
+                          <h3 className="font-medium text-foreground mb-1 font-lato">Optional Configuration</h3>
+                          <p className="text-sm text-muted-foreground font-lato">
+                            Capacity settings are optional and have been set to reasonable defaults. 
+                            You can adjust these values later in the clinic settings. These limits 
+                            help manage system resources and ensure optimal performance.
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  </div>
+                    </CardContent>
+                  </Card>
 
                 </CardContent>
               </CollapsibleContent>
@@ -497,13 +540,13 @@ export const ClinicServicesCapacityForm: React.FC<ClinicServicesCapacityFormProp
           </Card>
 
           {/* Information Card */}
-          <Card className="border-green-200 bg-green-50">
+          <Card className="border-primary/20" style={{ backgroundColor: colors.primary.light }}>
             <CardContent className="p-6">
               <div className="flex items-start gap-3">
-                <StethoscopeIcon className="h-6 w-6 text-green-600 mt-0.5" />
+                <StethoscopeIcon className="h-6 w-6 text-primary mt-0.5" />
                 <div>
-                  <h3 className="font-medium text-green-900 mb-2">Services & Capacity Management</h3>
-                  <div className="text-sm text-green-700 space-y-1">
+                  <h3 className="font-medium text-primary mb-2 font-lato">Services & Capacity Management</h3>
+                  <div className="text-sm text-primary/80 space-y-1 font-lato">
                     <p>• <strong>Services:</strong> Define all medical services your clinic provides with descriptions, durations, and pricing.</p>
                     <p>• <strong>Capacity:</strong> Set operational limits to ensure smooth clinic management and system performance.</p>
                     <p>• <strong>Flexibility:</strong> All settings can be modified later through the clinic management dashboard.</p>
@@ -520,7 +563,7 @@ export const ClinicServicesCapacityForm: React.FC<ClinicServicesCapacityFormProp
               variant="outline"
               onClick={onPrevious}
               disabled={isLoading}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 h-[48px] border-border hover:bg-surface-hover font-lato"
             >
               <ChevronLeftIcon className="h-4 w-4" />
               Previous
@@ -530,7 +573,7 @@ export const ClinicServicesCapacityForm: React.FC<ClinicServicesCapacityFormProp
               <Button
                 type="submit"
                 disabled={isLoading || !form.formState.isDirty}
-                className="flex items-center gap-2 min-w-[120px]"
+                className="flex items-center gap-2 min-w-[120px] h-[48px] bg-primary hover:bg-primary-dark text-white font-lato"
               >
                 {isLoading ? (
                   <>
@@ -547,8 +590,9 @@ export const ClinicServicesCapacityForm: React.FC<ClinicServicesCapacityFormProp
             </div>
           </div>
 
-        </form>
-      </Form>
+          </form>
+        </Form>
+      </div>
     </div>
   );
 };

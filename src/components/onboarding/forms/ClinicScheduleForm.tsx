@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -10,10 +10,10 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ChevronLeftIcon, ChevronRightIcon, ChevronDownIcon, ChevronUpIcon, ClockIcon, CalendarIcon, CheckCircle, BuildingIcon, AlertTriangleIcon } from "lucide-react";
+import { ChevronLeftIcon, ChevronRightIcon, ChevronDownIcon, ChevronUpIcon, ClockIcon, CalendarIcon, CheckCircle, BuildingIcon, AlertTriangleIcon, RefreshCwIcon } from "lucide-react";
 import { toast } from 'sonner';
 import { ClinicWorkingHoursDto } from '@/types/onboarding';
-import { saveClinicSchedule } from '@/api/onboardingApiClient';
+import { saveClinicSchedule, getComplexWorkingHours } from '@/api/onboardingApiClient';
 import { useClivinaTheme } from "@/hooks/useClivinaTheme";
 
 // Working hours schema based on ClinicWorkingHoursDto
@@ -63,6 +63,7 @@ interface ClinicScheduleFormProps {
   isLoading?: boolean;
   formData?: any;
   currentStep?: number;
+  complexId?: string;
 }
 
 export const ClinicScheduleForm: React.FC<ClinicScheduleFormProps> = ({
@@ -71,10 +72,17 @@ export const ClinicScheduleForm: React.FC<ClinicScheduleFormProps> = ({
   initialData = [],
   complexSchedule,
   planType = 'clinic',
-  isLoading = false
+  isLoading = false,
+  formData,
+  currentStep,
+  complexId
 }) => {
   const [isScheduleExpanded, setIsScheduleExpanded] = useState(true);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [complexWorkingHours, setComplexWorkingHours] = useState<ClinicWorkingHoursDto[]>([]);
+  const [isLoadingComplexHours, setIsLoadingComplexHours] = useState(false);
+  const [complexValidationErrors, setComplexValidationErrors] = useState<Record<string, string[]>>({});
+  const [hasAutoFilled, setHasAutoFilled] = useState(false);
   const { colors } = useClivinaTheme();
 
   const daysOfWeek = [
@@ -87,21 +95,337 @@ export const ClinicScheduleForm: React.FC<ClinicScheduleFormProps> = ({
     { key: 'sunday', label: 'Sunday' }
   ];
 
-  const defaultWorkingHours: ClinicWorkingHoursDto[] = initialData.length > 0 ? initialData : daysOfWeek.map(day => ({
-    dayOfWeek: day.key as ClinicWorkingHoursDto['dayOfWeek'],
-    isWorkingDay: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'].includes(day.key),
-    openingTime: '09:00',
-    closingTime: '17:00',
-    breakStartTime: '12:00',
-    breakEndTime: '13:00'
-  }));
+  // Create default working hours based on complex data or fallback defaults
+  const createDefaultWorkingHours = (): ClinicWorkingHoursDto[] => {
+    if (initialData.length > 0) return initialData;
+    
+    return daysOfWeek.map(day => {
+      const complexDay = complexWorkingHours.find(ch => ch.dayOfWeek === day.key);
+      
+      if (complexDay && complexDay.isWorkingDay) {
+        // Inherit from complex hours - use exact complex times
+        return {
+          dayOfWeek: day.key as ClinicWorkingHoursDto['dayOfWeek'],
+          isWorkingDay: true,
+          openingTime: complexDay.openingTime || '09:00',
+          closingTime: complexDay.closingTime || '17:00',
+          breakStartTime: complexDay.breakStartTime || '',
+          breakEndTime: complexDay.breakEndTime || ''
+        };
+      } else {
+        // Complex is closed or no complex data - clinic should be closed too
+        return {
+          dayOfWeek: day.key as ClinicWorkingHoursDto['dayOfWeek'],
+          isWorkingDay: false,
+          openingTime: '09:00',
+          closingTime: '17:00',
+          breakStartTime: '',
+          breakEndTime: ''
+        };
+      }
+    });
+  };
 
   const form = useForm<ClinicScheduleFormData>({
     resolver: zodResolver(clinicScheduleSchema),
     defaultValues: {
-      workingHours: defaultWorkingHours
+      workingHours: createDefaultWorkingHours()
     }
   });
+
+  // Fetch complex working hours for validation
+  useEffect(() => {
+    const fetchComplexHours = async () => {
+      if (!complexId || planType === 'clinic') return;
+      
+      setIsLoadingComplexHours(true);
+      try {
+        console.log('📅 Fetching complex working hours for complexId:', complexId);
+        const response = await getComplexWorkingHours(complexId);
+        console.log('📅 Complex working hours response:', response);
+        
+        if (response.success && response.data) {
+          setComplexWorkingHours(response.data);
+          console.log('✅ Complex working hours loaded:', response.data);
+        }
+      } catch (error) {
+        console.error('❌ Failed to fetch complex working hours:', error);
+        toast.error('Failed to load complex working hours for validation');
+      } finally {
+        setIsLoadingComplexHours(false);
+      }
+    };
+
+    fetchComplexHours();
+  }, [complexId, planType]);
+
+  // Update form defaults when complex hours are loaded (only if no initial data)
+  useEffect(() => {
+    if (complexWorkingHours.length > 0 && initialData.length === 0 && !isLoadingComplexHours) {
+      const newDefaults = createDefaultWorkingHours();
+      console.log('🔄 Updating form defaults based on complex hours:', newDefaults);
+      
+      // Reset form with new defaults
+      form.reset({
+        workingHours: newDefaults
+      });
+      
+      // Clear any existing validation errors
+      setComplexValidationErrors({});
+    }
+  }, [complexWorkingHours, initialData, isLoadingComplexHours, form]);
+
+  // Auto-fill clinic hours based on complex hours when complex data is loaded
+  useEffect(() => {
+    if (complexWorkingHours.length > 0 && !isLoadingComplexHours) {
+      console.log('🔄 Auto-filling clinic hours based on complex hours');
+      
+      const currentWorkingHours = form.getValues('workingHours');
+      let hasChanges = false;
+      
+      currentWorkingHours.forEach((clinicDay, index) => {
+        const complexDay = complexWorkingHours.find(ch => ch.dayOfWeek === clinicDay.dayOfWeek);
+        
+        if (complexDay) {
+          // Update working day status based on complex
+          if (clinicDay.isWorkingDay !== complexDay.isWorkingDay) {
+            form.setValue(`workingHours.${index}.isWorkingDay`, complexDay.isWorkingDay, { shouldValidate: false });
+            hasChanges = true;
+          }
+          
+          // If complex is working, update times
+          if (complexDay.isWorkingDay) {
+            // Update opening time
+            if (clinicDay.openingTime !== complexDay.openingTime) {
+              form.setValue(`workingHours.${index}.openingTime`, complexDay.openingTime || '09:00', { shouldValidate: false });
+              hasChanges = true;
+            }
+            
+            // Update closing time
+            if (clinicDay.closingTime !== complexDay.closingTime) {
+              form.setValue(`workingHours.${index}.closingTime`, complexDay.closingTime || '17:00', { shouldValidate: false });
+              hasChanges = true;
+            }
+            
+            // Update break times
+            if (clinicDay.breakStartTime !== complexDay.breakStartTime) {
+              form.setValue(`workingHours.${index}.breakStartTime`, complexDay.breakStartTime || '', { shouldValidate: false });
+              hasChanges = true;
+            }
+            
+            if (clinicDay.breakEndTime !== complexDay.breakEndTime) {
+              form.setValue(`workingHours.${index}.breakEndTime`, complexDay.breakEndTime || '', { shouldValidate: false });
+              hasChanges = true;
+            }
+          } else {
+            // Complex is closed, ensure clinic is also closed
+            if (clinicDay.isWorkingDay) {
+              form.setValue(`workingHours.${index}.isWorkingDay`, false, { shouldValidate: false });
+              hasChanges = true;
+            }
+          }
+        }
+      });
+      
+      if (hasChanges) {
+        console.log('✅ Auto-filled clinic hours based on complex schedule');
+        setHasAutoFilled(true);
+        toast.success('Clinic schedule updated to match complex working hours');
+      }
+    }
+  }, [complexWorkingHours, isLoadingComplexHours, form]);
+
+  // Initial validation when complex hours are loaded and form has existing data
+  useEffect(() => {
+    if (complexWorkingHours.length > 0 && !isLoadingComplexHours) {
+      const currentWorkingHours = form.getValues('workingHours');
+      const newErrors = validateAllClinicDays(currentWorkingHours);
+      
+      setComplexValidationErrors(newErrors);
+      
+      if (Object.keys(newErrors).length > 0) {
+        console.log('⚠️ Initial validation found conflicts:', newErrors);
+      }
+    }
+  }, [complexWorkingHours, isLoadingComplexHours, form]);
+
+  // Get complex working hours for a specific day
+  const getComplexHoursForDay = (dayOfWeek: string) => {
+    return complexWorkingHours.find(ch => ch.dayOfWeek === dayOfWeek);
+  };
+
+  // Enhanced validation against complex hours
+  const validateClinicHours = (dayOfWeek: string, clinicHours: any) => {
+    const errors: string[] = [];
+    const complexHours = getComplexHoursForDay(dayOfWeek);
+    
+    // If no complex hours found for this day, it means complex is closed
+    if (!complexHours && clinicHours.isWorkingDay) {
+      errors.push('Clinic cannot be open when complex is closed');
+      return errors;
+    }
+    
+    // If complex hours exist but marked as not working day
+    if (complexHours && !complexHours.isWorkingDay && clinicHours.isWorkingDay) {
+      errors.push('Clinic cannot be open when complex is closed');
+      return errors;
+    }
+    
+    // If clinic is not working or complex is not working, no validation needed
+    if (!clinicHours.isWorkingDay || !complexHours || !complexHours.isWorkingDay) {
+      return errors;
+    }
+    
+    const complexStart = complexHours.openingTime;
+    const complexEnd = complexHours.closingTime;
+    const complexBreakStart = complexHours.breakStartTime;
+    const complexBreakEnd = complexHours.breakEndTime;
+    
+    const clinicStart = clinicHours.openingTime;
+    const clinicEnd = clinicHours.closingTime;
+    
+    // Validate opening time
+    if (clinicStart && complexStart && clinicStart < complexStart) {
+      errors.push(`Opening time cannot be before complex opening time (${complexStart})`);
+    }
+    
+    // Validate closing time
+    if (clinicEnd && complexEnd && clinicEnd > complexEnd) {
+      errors.push(`Closing time cannot be after complex closing time (${complexEnd})`);
+    }
+    
+    // Enhanced break time validation
+    if (complexBreakStart && complexBreakEnd && clinicStart && clinicEnd) {
+      // Check if clinic operates during break time
+      const clinicStartMinutes = timeToMinutes(clinicStart);
+      const clinicEndMinutes = timeToMinutes(clinicEnd);
+      const breakStartMinutes = timeToMinutes(complexBreakStart);
+      const breakEndMinutes = timeToMinutes(complexBreakEnd);
+      
+      // Clinic operates during complex break time
+      if (clinicStartMinutes < breakEndMinutes && clinicEndMinutes > breakStartMinutes) {
+        // Clinic must have its own break time that aligns with complex break
+        if (!clinicHours.breakStartTime || !clinicHours.breakEndTime) {
+          errors.push(`Clinic must have break time when operating during complex break (${complexBreakStart} - ${complexBreakEnd})`);
+        } else {
+          // Check if clinic break time aligns with complex break time
+          const clinicBreakStartMinutes = timeToMinutes(clinicHours.breakStartTime);
+          const clinicBreakEndMinutes = timeToMinutes(clinicHours.breakEndTime);
+          
+          // Clinic break should be during or align with complex break
+          if (clinicBreakStartMinutes > breakEndMinutes || clinicBreakEndMinutes < breakStartMinutes) {
+            errors.push(`Clinic break time should align with complex break time (${complexBreakStart} - ${complexBreakEnd})`);
+          }
+        }
+      }
+    }
+    
+    // Validate basic time logic
+    if (clinicStart && clinicEnd && clinicStart >= clinicEnd) {
+      errors.push('Opening time must be before closing time');
+    }
+    
+    return errors;
+  };
+
+  // Helper function to convert time string to minutes for easier comparison
+  const timeToMinutes = (timeStr: string): number => {
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    return hours * 60 + minutes;
+  };
+
+  // Helper function to validate all clinic days at once
+  const validateAllClinicDays = (clinicHours: ClinicWorkingHoursDto[]): Record<string, string[]> => {
+    const errors: Record<string, string[]> = {};
+    
+    clinicHours.forEach((clinicDay) => {
+      if (clinicDay && clinicDay.dayOfWeek) {
+        const dayErrors = validateClinicHours(clinicDay.dayOfWeek, clinicDay);
+        if (dayErrors.length > 0) {
+          errors[clinicDay.dayOfWeek] = dayErrors;
+        }
+      }
+    });
+    
+    return errors;
+  };
+
+  // Use complex hours for a specific day
+  const useComplexHoursForDay = (dayOfWeek: string) => {
+    const complexHours = getComplexHoursForDay(dayOfWeek);
+    if (!complexHours || !complexHours.isWorkingDay) return;
+    
+    const dayIndex = form.getValues('workingHours').findIndex(wh => wh.dayOfWeek === dayOfWeek);
+    if (dayIndex === -1) return;
+    
+    // Clear validation errors for this day first
+    setComplexValidationErrors(prev => {
+      const newErrors = { ...prev };
+      delete newErrors[dayOfWeek];
+      return newErrors;
+    });
+    
+    // Apply complex hours values
+    form.setValue(`workingHours.${dayIndex}.isWorkingDay`, true, { shouldValidate: false });
+    form.setValue(`workingHours.${dayIndex}.openingTime`, complexHours.openingTime || '09:00', { shouldValidate: false });
+    form.setValue(`workingHours.${dayIndex}.closingTime`, complexHours.closingTime || '17:00', { shouldValidate: false });
+    form.setValue(`workingHours.${dayIndex}.breakStartTime`, complexHours.breakStartTime || '', { shouldValidate: false });
+    form.setValue(`workingHours.${dayIndex}.breakEndTime`, complexHours.breakEndTime || '', { shouldValidate: false });
+    
+    // Trigger a gentle validation to ensure no conflicts
+    setTimeout(() => {
+      const clinicDay = form.getValues(`workingHours.${dayIndex}`);
+      const dayErrors = validateClinicHours(dayOfWeek, clinicDay);
+      
+      if (dayErrors.length === 0) {
+        toast.success(`Applied complex hours to ${dayOfWeek.charAt(0).toUpperCase() + dayOfWeek.slice(1)}`);
+      } else {
+        // This should not happen when using complex hours, but just in case
+        setComplexValidationErrors(prev => ({
+          ...prev,
+          [dayOfWeek]: dayErrors
+        }));
+        toast.warning(`Applied complex hours to ${dayOfWeek.charAt(0).toUpperCase() + dayOfWeek.slice(1)}, but validation issues remain`);
+      }
+    }, 100);
+  };
+
+  // Real-time validation when form values change - only validate changed days
+  useEffect(() => {
+    if (complexWorkingHours.length === 0 || planType === 'clinic') return;
+    
+    const subscription = form.watch((values, { name }) => {
+      // Only validate if a working hours field changed
+      if (!name || !name.startsWith('workingHours.')) return;
+      
+      // Extract the day index from the field name (e.g., "workingHours.0.isWorkingDay" -> 0)
+      const dayIndexMatch = name.match(/workingHours\.(\d+)\./);
+      if (!dayIndexMatch) return;
+      
+      const dayIndex = parseInt(dayIndexMatch[1]);
+      const clinicDay = values.workingHours?.[dayIndex];
+      
+      if (!clinicDay || !clinicDay.dayOfWeek) return;
+      
+      // Only validate the specific day that changed
+      const dayErrors = validateClinicHours(clinicDay.dayOfWeek, clinicDay);
+      
+      setComplexValidationErrors(prev => {
+        const newErrors = { ...prev };
+        
+        if (dayErrors.length > 0) {
+          newErrors[clinicDay.dayOfWeek!] = dayErrors;
+        } else {
+          // Clear errors for this day if no violations
+          delete newErrors[clinicDay.dayOfWeek!];
+        }
+        
+        return newErrors;
+      });
+    });
+    
+    return () => subscription.unsubscribe();
+  }, [complexWorkingHours, planType, form]);
 
   // Validate clinic hours against complex hours
   const validateAgainstComplexHours = (clinicHours: ClinicWorkingHoursDto[]): string[] => {
@@ -136,15 +460,40 @@ export const ClinicScheduleForm: React.FC<ClinicScheduleFormProps> = ({
 
   const onSubmit = async (data: ClinicScheduleFormData) => {
     try {
-      // Validate against complex schedule if needed
-      const errors = validateAgainstComplexHours(data.workingHours);
-      if (errors.length > 0) {
-        setValidationErrors(errors);
+      // Enhanced validation against complex hours
+      if (complexWorkingHours.length > 0 && planType !== 'clinic') {
+        const dayErrors = validateAllClinicDays(data.workingHours);
+        
+        if (Object.keys(dayErrors).length > 0) {
+          // Update the complex validation errors to show current issues
+          setComplexValidationErrors(dayErrors);
+          
+          const errorMessages = Object.entries(dayErrors).flatMap(([day, errors]) =>
+            errors.map(error => `${day.charAt(0).toUpperCase() + day.slice(1)}: ${error}`)
+          );
+          
+          setValidationErrors(errorMessages);
+          toast.error(`Please fix validation errors:\n${errorMessages.slice(0, 3).join('\n')}${errorMessages.length > 3 ? '\n...and more' : ''}`);
+          return;
+        }
+      }
+
+      // Legacy validation for backward compatibility
+      const legacyErrors = validateAgainstComplexHours(data.workingHours);
+      if (legacyErrors.length > 0) {
+        setValidationErrors(legacyErrors);
         toast.error('Schedule conflicts with complex hours. Please review the errors below.');
         return;
       }
       
       setValidationErrors([]);
+
+      // Basic validation - at least one working day
+      const workingDays = data.workingHours.filter(day => day.isWorkingDay);
+      if (workingDays.length === 0) {
+        toast.error('Please select at least one working day');
+        return;
+      }
 
       // Save to backend
       const response = await saveClinicSchedule(data.workingHours);
@@ -204,6 +553,11 @@ export const ClinicScheduleForm: React.FC<ClinicScheduleFormProps> = ({
                   <p className="text-sm text-primary/80 font-lato">
                     Your clinic hours must be within your complex's operating hours. 
                     The complex schedule will be used to validate your clinic's availability.
+                    {hasAutoFilled && (
+                      <span className="block mt-1 text-xs text-primary/70">
+                        ✅ Clinic schedule has been automatically filled based on complex working hours
+                      </span>
+                    )}
                   </p>
                 </div>
               </div>
@@ -258,33 +612,108 @@ export const ClinicScheduleForm: React.FC<ClinicScheduleFormProps> = ({
                 <CardContent className="px-6 pb-6 pt-0 space-y-4">
 
                   <div className="space-y-4">
-                    {daysOfWeek.map((day, index) => (
-                      <Card key={day.key} className="border-border bg-surface-tertiary">
-                        <CardContent className="p-4">
-                          <div className="space-y-4">
-                            
-                            {/* Day and Working Day Toggle */}
-                            <div className="flex items-center justify-between">
-                              <h3 className="font-medium text-foreground font-lato">{day.label}</h3>
-                              <FormField
-                                control={form.control}
-                                name={`workingHours.${index}.isWorkingDay`}
-                                render={({ field }) => (
-                                  <FormItem className="flex flex-row items-center space-x-3 space-y-0">
-                                    <FormControl>
-                                      <Checkbox
-                                        checked={field.value}
-                                        onCheckedChange={field.onChange}
-                                        disabled={isLoading}
-                                        className="border-border data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-                                      />
-                                    </FormControl>
-                                    <FormLabel className="text-sm font-normal text-muted-foreground font-lato">
-                                      Open on {day.label}
-                                    </FormLabel>
-                                  </FormItem>
-                                )}
-                              />
+                    {daysOfWeek.map((day, index) => {
+                      const complexHours = getComplexHoursForDay(day.key);
+                      const hasValidationErrors = complexValidationErrors[day.key]?.length > 0;
+                      const isComplexClosed = !complexHours || (complexHours && !complexHours.isWorkingDay);
+                      
+                      return (
+                        <Card key={day.key} className={`border-border bg-surface-tertiary ${hasValidationErrors ? 'border-destructive' : ''}`}>
+                          <CardContent className="p-4">
+                            <div className="space-y-4">
+                              
+                                                             {/* Day and Working Day Toggle */}
+                               <div className="flex items-center justify-between">
+                                 <div className="flex items-center gap-2">
+                                   <h3 className="font-medium text-foreground font-lato">{day.label}</h3>
+                                   {isComplexClosed && planType !== 'clinic' && (
+                                     <span className="text-xs text-destructive font-lato px-2 py-1 rounded bg-destructive/10">
+                                       Complex Closed
+                                     </span>
+                                   )}
+                                   {hasValidationErrors && (
+                                     <AlertTriangleIcon className="h-4 w-4 text-destructive" />
+                                   )}
+                                   {complexHours && complexHours.isWorkingDay && form.watch(`workingHours.${index}.isWorkingDay`) && 
+                                    form.watch(`workingHours.${index}.openingTime`) === complexHours.openingTime &&
+                                    form.watch(`workingHours.${index}.closingTime`) === complexHours.closingTime &&
+                                    form.watch(`workingHours.${index}.breakStartTime`) === complexHours.breakStartTime &&
+                                    form.watch(`workingHours.${index}.breakEndTime`) === complexHours.breakEndTime && (
+                                     <span className="text-xs text-green-600 font-lato px-2 py-1 rounded bg-green-100">
+                                       ✓ Matches Complex
+                                     </span>
+                                   )}
+                                 </div>
+                                <FormField
+                                  control={form.control}
+                                  name={`workingHours.${index}.isWorkingDay`}
+                                  render={({ field }) => (
+                                    <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                                      <FormControl>
+                                        <Checkbox
+                                          checked={field.value}
+                                          onCheckedChange={(checked) => {
+                                            // Prevent enabling if complex is closed
+                                            if (checked && isComplexClosed && planType !== 'clinic') {
+                                              toast.error(`Cannot open clinic on ${day.label} - complex is closed`);
+                                              return;
+                                            }
+                                            field.onChange(checked);
+                                          }}
+                                          disabled={isLoading || (isComplexClosed && planType !== 'clinic')}
+                                          className="border-border data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                                        />
+                                      </FormControl>
+                                      <FormLabel className="text-sm font-normal text-muted-foreground font-lato">
+                                        Open on {day.label}
+                                      </FormLabel>
+                                    </FormItem>
+                                  )}
+                                />
+                              </div>
+
+                                                             {/* Complex Hours Info and Use Complex Hours Button */}
+                               {complexHours && complexHours.isWorkingDay && planType !== 'clinic' && form.watch(`workingHours.${index}.isWorkingDay`) && (
+                                 <div className="flex items-center justify-between p-3 rounded-lg border border-border bg-muted/20">
+                                   <div>
+                                     <p className="text-sm font-medium text-foreground font-lato">
+                                       Complex Hours: {complexHours.openingTime || 'N/A'} - {complexHours.closingTime || 'N/A'}
+                                     </p>
+                                     {complexHours.breakStartTime && complexHours.breakEndTime && (
+                                       <p className="text-xs text-muted-foreground font-lato">
+                                         Break: {complexHours.breakStartTime} - {complexHours.breakEndTime}
+                                       </p>
+                                     )}
+                                   </div>
+                                   <Button
+                                     type="button"
+                                     variant="outline"
+                                     size="sm"
+                                     onClick={() => useComplexHoursForDay(day.key)}
+                                     disabled={isLoading}
+                                     className="font-lato border-border hover:bg-muted"
+                                   >
+                                     <RefreshCwIcon className="h-4 w-4 mr-2" />
+                                     Apply Complex Hours
+                                   </Button>
+                                 </div>
+                               )}
+
+                              {/* Validation Errors for this day */}
+                              {hasValidationErrors && (
+                                <div className="p-3 rounded-lg border border-destructive bg-destructive/5">
+                                  <div className="flex items-start gap-2">
+                                    <AlertTriangleIcon className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
+                                    <div>
+                                      {complexValidationErrors[day.key]?.map((error, errorIndex) => (
+                                        <p key={errorIndex} className="text-sm text-destructive font-lato">
+                                          {error}
+                                        </p>
+                                      ))}
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
                             </div>
 
                             {/* Working Hours Fields */}
@@ -408,10 +837,10 @@ export const ClinicScheduleForm: React.FC<ClinicScheduleFormProps> = ({
                               })()
                             )}
 
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
                   </div>
 
                   <Card className="border-primary/20" style={{ backgroundColor: colors.surface.secondary }}>
@@ -479,8 +908,12 @@ export const ClinicScheduleForm: React.FC<ClinicScheduleFormProps> = ({
             <div className="flex items-center gap-2">
               <Button
                 type="submit"
-                disabled={isLoading}
-                className="flex items-center gap-2 min-w-[120px] h-[48px] bg-primary hover:bg-primary-dark text-white font-lato"
+                disabled={
+                  isLoading || 
+                  Object.keys(complexValidationErrors).length > 0 ||
+                  validationErrors.length > 0
+                }
+                className="flex items-center gap-2 min-w-[120px] h-[48px] bg-primary hover:bg-primary-dark text-white font-lato disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isLoading ? (
                   <>

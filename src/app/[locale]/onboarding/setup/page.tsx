@@ -669,6 +669,7 @@ export default function SetupPage() {
               planType={planType}
               formData={formData}
               currentStep={currentStep}
+              complexId={formData['2-overview']?.entityId || formData['2-overview']?.complexId || formData['2-overview']?.id || formData['2-overview']?._id}
             />
           );
         }
@@ -710,9 +711,10 @@ export default function SetupPage() {
         }
       } else if (currentStep === 2) {
         // Clinic forms for complex plan
+        // Get complexId from form data - for complex plan, complex is created in step 1
+        const complexId = formData['1-overview']?.entityId || formData['1-overview']?.complexId || formData['1-overview']?.id || formData['1-overview']?._id;
+        
         if (currentSubStep === 'overview') {
-          // Get complexId from form data - for complex plan, complex is created in step 1
-          const complexId = formData['1-overview']?.entityId || formData['1-overview']?.complexId || formData['1-overview']?.id || formData['1-overview']?._id;
           
           // Debug logging for complex plan step 2
           console.log('🏗️ Complex Plan - Clinic Overview - Debug:', {
@@ -776,6 +778,7 @@ export default function SetupPage() {
               planType={planType}
               formData={formData}
               currentStep={currentStep}
+              complexId={complexId}
             />
           );
         }
@@ -833,6 +836,7 @@ export default function SetupPage() {
               planType={planType}
               formData={formData}
               currentStep={currentStep}
+              complexId={formData['1-overview']?.entityId || formData['1-overview']?.complexId || formData['1-overview']?.id || formData['1-overview']?._id}
             />
           );
         }

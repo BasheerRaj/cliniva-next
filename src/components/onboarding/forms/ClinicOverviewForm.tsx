@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from "react";
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ChevronLeftIcon, ChevronRightIcon, ChevronDownIcon, ChevronUpIcon, BuildingIcon, StethoscopeIcon, Upload, Calendar, Building, FileText, User, Hash, Target, Eye, MapPinIcon, PhoneIcon, MailIcon, GlobeIcon, PlusIcon, TrashIcon } from "lucide-react";
+import { ChevronLeftIcon, ChevronRightIcon, ChevronDownIcon, ChevronUpIcon, BuildingIcon, StethoscopeIcon, Upload, Calendar, Building, FileText, User, Hash, Target, Eye } from "lucide-react";
 import { toast } from 'sonner';
 import { ClinicOverviewDto } from '@/types/onboarding';
 import { saveClinicOverview } from '@/api/onboardingApiClient';
@@ -99,41 +99,7 @@ const clinicOverviewSchema = z.object({
     .optional()
     .or(z.literal('')),
     
-  complexDepartmentId: z.string().optional(),
-  
-  // Contact information fields
-  address: z.object({
-    street: z.string().optional().or(z.literal('')),
-    city: z.string().optional().or(z.literal('')),
-    state: z.string().optional().or(z.literal('')),
-    postalCode: z.string().optional().or(z.literal('')),
-    country: z.string().optional().or(z.literal('')),
-    googleLocation: z.string().optional().or(z.literal(''))
-  }).optional(),
-  
-  email: z.string().email('Please enter a valid email').optional().or(z.literal('')),
-  phoneNumbers: z.array(z.object({
-    number: z.string().min(1, 'Phone number is required'),
-    type: z.enum(['primary', 'secondary', 'emergency', 'fax', 'mobile']),
-    label: z.string().optional().or(z.literal(''))
-  })).optional(),
-  
-  emergencyContact: z.object({
-    name: z.string().optional().or(z.literal('')),
-    phone: z.string().optional().or(z.literal('')),
-    email: z.string().email('Please enter a valid emergency contact email').optional().or(z.literal('')),
-    relationship: z.string().optional().or(z.literal(''))
-  }).optional(),
-  
-  socialMediaLinks: z.object({
-    facebook: z.string().optional().or(z.literal('')),
-    instagram: z.string().optional().or(z.literal('')),
-    twitter: z.string().optional().or(z.literal('')),
-    linkedin: z.string().optional().or(z.literal('')),
-    whatsapp: z.string().optional().or(z.literal('')),
-    youtube: z.string().optional().or(z.literal('')),
-    website: z.string().optional().or(z.literal(''))
-  }).optional()
+  complexDepartmentId: z.string().optional()
 });
 
 type ClinicOverviewFormData = z.infer<typeof clinicOverviewSchema>;
@@ -163,10 +129,6 @@ export const ClinicOverviewForm: React.FC<ClinicOverviewFormProps> = ({
 }) => {
   const [isBasicInfoExpanded, setIsBasicInfoExpanded] = useState(true);
   const [isBusinessProfileExpanded, setIsBusinessProfileExpanded] = useState(false);
-  const [isAddressExpanded, setIsAddressExpanded] = useState(false);
-  const [isContactExpanded, setIsContactExpanded] = useState(false);
-  const [isEmergencyExpanded, setIsEmergencyExpanded] = useState(false);
-  const [isSocialMediaExpanded, setIsSocialMediaExpanded] = useState(false);
   const [useInheritance, setUseInheritance] = useState(false);
 
   // Determine which departments to load based on plan type
@@ -241,42 +203,12 @@ export const ClinicOverviewForm: React.FC<ClinicOverviewFormProps> = ({
       overview: initialData.overview || parentData?.overview || '',
       goals: initialData.goals || parentData?.goals || '',
       ceoName: initialData.ceoName || parentData?.ceoName || '',
-      complexDepartmentId: initialData.complexDepartmentId || undefined,
-      // Contact information default values
-      address: (initialData as any).address || {
-        street: '',
-        city: '',
-        state: '',
-        postalCode: '',
-        country: '',
-        googleLocation: ''
-      },
-      email: (initialData as any).email || '',
-      phoneNumbers: (initialData as any).phoneNumbers || [{ number: '', type: 'primary' as const, label: '' }],
-      emergencyContact: (initialData as any).emergencyContact || {
-        name: '',
-        phone: '',
-        email: '',
-        relationship: ''
-      },
-      socialMediaLinks: (initialData as any).socialMediaLinks || {
-        facebook: '',
-        instagram: '',
-        twitter: '',
-        linkedin: '',
-        whatsapp: '',
-        youtube: '',
-        website: ''
-      }
+      complexDepartmentId: initialData.complexDepartmentId || undefined
     },
     mode: 'onChange' // Enable real-time validation
   });
 
-  // Phone numbers field array
-  const { fields: phoneFields, append: appendPhone, remove: removePhone } = useFieldArray({
-    control: form.control,
-    name: 'phoneNumbers'
-  });
+
 
   // Trigger validation when form values change
   useEffect(() => {
@@ -730,384 +662,6 @@ export const ClinicOverviewForm: React.FC<ClinicOverviewFormProps> = ({
                         label="CEO/Director Name"
                         placeholder="Enter CEO/Director Name"
                         icon={User}
-                        disabled={isLoading}
-                      />
-                    </div>
-                  </>
-                )}
-              </div>
-            </Card>
-
-            {/* Address Information Section */}
-            <Card className="bg-background border-border shadow-sm">
-              <div className="p-6">
-                <div 
-                  className="flex items-center justify-between mb-6 cursor-pointer"
-                  onClick={() => setIsAddressExpanded(!isAddressExpanded)}
-                >
-                  <h3 className="text-lg font-bold text-primary font-lato">
-                    Address Information
-                  </h3>
-                  {isAddressExpanded ? (
-                    <ChevronUpIcon className="w-5 h-5 text-primary" />
-                  ) : (
-                    <ChevronDownIcon className="w-5 h-5 text-primary" />
-                  )}
-                </div>
-
-                {isAddressExpanded && (
-                  <>
-                    {/* Street Address */}
-                    <FormFieldWithIcon
-                      control={form.control}
-                      name="address.street"
-                      label="Street Address"
-                      placeholder="123 Medical Center Street"
-                      icon={MapPinIcon}
-                      disabled={isLoading}
-                    />
-
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                      {/* City */}
-                      <FormFieldWithIcon
-                        control={form.control}
-                        name="address.city"
-                        label="City"
-                        placeholder="Riyadh"
-                        icon={Building}
-                        disabled={isLoading}
-                      />
-
-                      {/* State/Province */}
-                      <FormFieldWithIcon
-                        control={form.control}
-                        name="address.state"
-                        label="State/Province"
-                        placeholder="Riyadh Province"
-                        icon={Building}
-                        disabled={isLoading}
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                      {/* Postal Code */}
-                      <FormFieldWithIcon
-                        control={form.control}
-                        name="address.postalCode"
-                        label="Postal Code"
-                        placeholder="12345"
-                        icon={Hash}
-                        disabled={isLoading}
-                      />
-
-                      {/* Country */}
-                      <FormFieldWithIcon
-                        control={form.control}
-                        name="address.country"
-                        label="Country"
-                        placeholder="Saudi Arabia"
-                        icon={GlobeIcon}
-                        disabled={isLoading}
-                      />
-                    </div>
-
-                    {/* Google Location */}
-                    <FormFieldWithIcon
-                      control={form.control}
-                      name="address.googleLocation"
-                      label="Google Maps Location"
-                      placeholder="https://maps.google.com/... or coordinates"
-                      icon={GlobeIcon}
-                      disabled={isLoading}
-                    />
-                  </>
-                )}
-              </div>
-            </Card>
-
-            {/* Contact Information Section */}
-            <Card className="bg-background border-border shadow-sm">
-              <div className="p-6">
-                <div 
-                  className="flex items-center justify-between mb-6 cursor-pointer"
-                  onClick={() => setIsContactExpanded(!isContactExpanded)}
-                >
-                  <h3 className="text-lg font-bold text-primary font-lato">
-                    Contact Information
-                  </h3>
-                  {isContactExpanded ? (
-                    <ChevronUpIcon className="w-5 h-5 text-primary" />
-                  ) : (
-                    <ChevronDownIcon className="w-5 h-5 text-primary" />
-                  )}
-                </div>
-
-                {isContactExpanded && (
-                  <>
-                    {/* Email */}
-                    <FormFieldWithIcon
-                      control={form.control}
-                      name="email"
-                      label="Email Address"
-                      placeholder="clinic@example.com"
-                      icon={MailIcon}
-                      disabled={isLoading}
-                    />
-
-                    {/* Phone Numbers */}
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <FormLabel className="text-sm font-bold text-primary font-lato">Phone Numbers</FormLabel>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => appendPhone({ number: '', type: 'secondary', label: '' })}
-                          disabled={isLoading}
-                          className="font-lato"
-                        >
-                          <PlusIcon className="h-4 w-4 mr-2" />
-                          Add Phone
-                        </Button>
-                      </div>
-
-                      {phoneFields.map((field, index) => (
-                        <div key={field.id} className="grid grid-cols-1 md:grid-cols-4 gap-3 p-4 border border-border rounded-lg bg-muted/20">
-                          {/* Phone Number */}
-                          <FormField
-                            control={form.control}
-                            name={`phoneNumbers.${index}.number`}
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel className="text-sm font-medium text-foreground font-lato">Phone Number</FormLabel>
-                                <FormControl>
-                                  <Input
-                                    {...field}
-                                    placeholder="+966 11 123 4567"
-                                    className="h-[40px] border-border bg-background text-foreground font-lato"
-                                    disabled={isLoading}
-                                  />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-
-                          {/* Phone Type */}
-                          <FormField
-                            control={form.control}
-                            name={`phoneNumbers.${index}.type`}
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel className="text-sm font-medium text-foreground font-lato">Type</FormLabel>
-                                <Select onValueChange={field.onChange} value={field.value} disabled={isLoading}>
-                                  <SelectTrigger className="h-[40px] border-border bg-background text-foreground font-lato">
-                                    <SelectValue placeholder="Select type" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="primary">Primary</SelectItem>
-                                    <SelectItem value="secondary">Secondary</SelectItem>
-                                    <SelectItem value="emergency">Emergency</SelectItem>
-                                    <SelectItem value="fax">Fax</SelectItem>
-                                    <SelectItem value="mobile">Mobile</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-
-                          {/* Label */}
-                          <FormField
-                            control={form.control}
-                            name={`phoneNumbers.${index}.label`}
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel className="text-sm font-medium text-foreground font-lato">Label</FormLabel>
-                                <FormControl>
-                                  <Input
-                                    {...field}
-                                    placeholder="Main office"
-                                    className="h-[40px] border-border bg-background text-foreground font-lato"
-                                    disabled={isLoading}
-                                  />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-
-                          {/* Remove Button */}
-                          <div className="flex items-end">
-                            {phoneFields.length > 1 && (
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => removePhone(index)}
-                                disabled={isLoading}
-                                className="h-[40px] w-full font-lato"
-                              >
-                                <TrashIcon className="h-4 w-4" />
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </>
-                )}
-              </div>
-            </Card>
-
-            {/* Emergency Contact Section */}
-            <Card className="bg-background border-border shadow-sm">
-              <div className="p-6">
-                <div 
-                  className="flex items-center justify-between mb-6 cursor-pointer"
-                  onClick={() => setIsEmergencyExpanded(!isEmergencyExpanded)}
-                >
-                  <h3 className="text-lg font-bold text-primary font-lato">
-                    Emergency Contact
-                  </h3>
-                  {isEmergencyExpanded ? (
-                    <ChevronUpIcon className="w-5 h-5 text-primary" />
-                  ) : (
-                    <ChevronDownIcon className="w-5 h-5 text-primary" />
-                  )}
-                </div>
-
-                {isEmergencyExpanded && (
-                  <>
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                      {/* Emergency Contact Name */}
-                      <FormFieldWithIcon
-                        control={form.control}
-                        name="emergencyContact.name"
-                        label="Contact Name"
-                        placeholder="Dr. John Smith"
-                        icon={User}
-                        disabled={isLoading}
-                      />
-
-                      {/* Relationship */}
-                      <FormFieldWithIcon
-                        control={form.control}
-                        name="emergencyContact.relationship"
-                        label="Relationship"
-                        placeholder="Head Doctor, Manager, etc."
-                        icon={User}
-                        disabled={isLoading}
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                      {/* Emergency Contact Phone */}
-                      <FormFieldWithIcon
-                        control={form.control}
-                        name="emergencyContact.phone"
-                        label="Phone Number"
-                        placeholder="+966 50 123 4567"
-                        icon={PhoneIcon}
-                        disabled={isLoading}
-                      />
-
-                      {/* Emergency Contact Email */}
-                      <FormFieldWithIcon
-                        control={form.control}
-                        name="emergencyContact.email"
-                        label="Email Address"
-                        placeholder="emergency@clinic.com"
-                        icon={MailIcon}
-                        disabled={isLoading}
-                      />
-                    </div>
-                  </>
-                )}
-              </div>
-            </Card>
-
-            {/* Social Media Section */}
-            <Card className="bg-background border-border shadow-sm">
-              <div className="p-6">
-                <div 
-                  className="flex items-center justify-between mb-6 cursor-pointer"
-                  onClick={() => setIsSocialMediaExpanded(!isSocialMediaExpanded)}
-                >
-                  <h3 className="text-lg font-bold text-primary font-lato">
-                    Social Media & Web Presence
-                  </h3>
-                  {isSocialMediaExpanded ? (
-                    <ChevronUpIcon className="w-5 h-5 text-primary" />
-                  ) : (
-                    <ChevronDownIcon className="w-5 h-5 text-primary" />
-                  )}
-                </div>
-
-                {isSocialMediaExpanded && (
-                  <>
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                      {/* Website */}
-                      <FormFieldWithIcon
-                        control={form.control}
-                        name="socialMediaLinks.website"
-                        label="Website"
-                        placeholder="https://www.yourclinic.com"
-                        icon={GlobeIcon}
-                        disabled={isLoading}
-                      />
-
-                      {/* Facebook */}
-                      <FormFieldWithIcon
-                        control={form.control}
-                        name="socialMediaLinks.facebook"
-                        label="Facebook"
-                        placeholder="https://facebook.com/yourclinic"
-                        icon={GlobeIcon}
-                        disabled={isLoading}
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                      {/* Instagram */}
-                      <FormFieldWithIcon
-                        control={form.control}
-                        name="socialMediaLinks.instagram"
-                        label="Instagram"
-                        placeholder="https://instagram.com/yourclinic"
-                        icon={GlobeIcon}
-                        disabled={isLoading}
-                      />
-
-                      {/* LinkedIn */}
-                      <FormFieldWithIcon
-                        control={form.control}
-                        name="socialMediaLinks.linkedin"
-                        label="LinkedIn"
-                        placeholder="https://linkedin.com/company/yourclinic"
-                        icon={GlobeIcon}
-                        disabled={isLoading}
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                      {/* WhatsApp */}
-                      <FormFieldWithIcon
-                        control={form.control}
-                        name="socialMediaLinks.whatsapp"
-                        label="WhatsApp"
-                        placeholder="https://wa.me/966501234567"
-                        icon={PhoneIcon}
-                        disabled={isLoading}
-                      />
-
-                      {/* YouTube */}
-                      <FormFieldWithIcon
-                        control={form.control}
-                        name="socialMediaLinks.youtube"
-                        label="YouTube"
-                        placeholder="https://youtube.com/c/yourclinic"
-                        icon={GlobeIcon}
                         disabled={isLoading}
                       />
                     </div>

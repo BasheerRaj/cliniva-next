@@ -179,37 +179,7 @@ export interface ClinicOverviewDto {
   }>;
   complexDepartmentId?: string;
   // Note: Capacity fields removed - now handled by schema defaults
-  
-  // Contact information fields
-  address?: {
-    street?: string;
-    city?: string;
-    state?: string;
-    postalCode?: string;
-    country?: string;
-    googleLocation?: string;
-  };
-  email?: string;
-  phoneNumbers?: Array<{
-    number: string;
-    type: 'primary' | 'secondary' | 'emergency' | 'fax' | 'mobile';
-    label?: string;
-  }>;
-  emergencyContact?: {
-    name?: string;
-    phone?: string;
-    email?: string;
-    relationship?: string;
-  };
-  socialMediaLinks?: {
-    facebook?: string;
-    instagram?: string;
-    twitter?: string;
-    linkedin?: string;
-    whatsapp?: string;
-    youtube?: string;
-    website?: string;
-  };
+  // Note: Contact information fields moved to ClinicContactDto
 }
 
 export interface ClinicContactDto extends ContactInfoDto {
